@@ -2,7 +2,7 @@
 
 ## Overview
 
-Mac Health Check provides a practical and user-friendly approach to surfacing Mac compliance information directly to end-users via Jamf Self Service.
+Mac Health Check provides a practical and user-friendly approach to surfacing Mac compliance information directly to end-users via Jamf Pro Self Service.
 
 Built using the open-source utility [swiftDialog](https://github.com/swiftDialog/swiftDialog/wiki), the solution acts as a “heads-up display” that presents real-time system health and policy compliance status in a clear and interactive format.
 
