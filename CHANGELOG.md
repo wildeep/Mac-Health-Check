@@ -2,6 +2,11 @@
 
 ## CHANGELOG
 
+### 2.0.1 (17-Jul-2025)
+- Cleaned-up `checkExternal` error and failure reporting
+- Corrected `dialogBinary` execution parameters (thanks, @fraserhess, @bartreadon and @BigMacAdmin!)
+- Added "Current Elapsed Time" to document execution time prior to dialog creation
+
 ### 2.0.0 (17-Jul-2025)
 - Renamed to "Mac Health Check" (thanks, @uurazzle and @scriptingosx!)
 - Added Webhook functionality

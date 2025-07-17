@@ -10,8 +10,7 @@
 # Information: https://snelson.us/mhc
 #
 # Inspired by:
-#   - @talkingmoose
-#   - @robjschroeder
+#   - @talkingmoose and @robjschroeder
 #
 ####################################################################################################
 #
@@ -19,6 +18,11 @@
 #
 # Version 2.0.0, 17-Jul-2025, Dan K. Snelson (@dan-snelson)
 #   - Renamed "Computer Compliance" to "Mac Health Check" (thanks, @uurazzle and @scriptingosx!)
+#
+# Version 2.0.1, 17-Jul-2025, Dan K. Snelson (@dan-snelson)
+#   - Cleaned-up `checkExternal` error and failure reporting
+#   - Corrected `dialogBinary` execution parameters (thanks, @fraserhess, @bartreadon and @BigMacAdmin!)
+#   - Added "Current Elapsed Time" to document execution time prior to dialog creation
 #
 ####################################################################################################
 
@@ -33,7 +37,7 @@
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin/
 
 # Script Version
-scriptVersion="2.0.0"
+scriptVersion="2.0.1"
 
 # Client-side Log
 scriptLog="/var/log/org.churchofjesuschrist.log"
@@ -691,7 +695,7 @@ function quitScript() {
     # Remove default dialog.log
     rm -rf /var/tmp/dialog.log
 
-    notice "Elapsed Time: $(printf '%dh:%dm:%ds\n' $((SECONDS/3600)) $((SECONDS%3600/60)) $((SECONDS%60)))"
+    notice "Total Elapsed Time: $(printf '%dh:%dm:%ds\n' $((SECONDS/3600)) $((SECONDS%3600/60)) $((SECONDS%60)))"
 
     quitOut "Goodbye!"
 
@@ -1273,7 +1277,7 @@ function checkFreeDiskSpace() {
 
     diskMessage="${humanReadableCheckName}: ${diskSpace}"
 
-    if [[ "${freePercentage}" < "${allowedMinimumFreeDiskPercentage}" ]]; then
+    if [[ "${freePercentage}" < "${allowedFreeDiskPercentage}" ]]; then
 
         dialogUpdate "listitem: index: ${1}, status: fail, statustext: ${diskSpace}"
         errorOut "${humanReadableCheckName}: ${diskSpace}"
@@ -1611,18 +1615,18 @@ function checkExternal() {
         *"Failed"* )
             dialogUpdate "listitem: index: ${1}, status: fail, statustext: Failed"
             errorOut "${appDisplayName} Failed"
-            overallHealth+="${appDisplayName} Failed (${1}); "
+            overallHealth+="${appDisplayName} failure; "
             ;;
 
         *"Running"* ) 
             dialogUpdate "listitem: index: ${1}, status: success, statustext: Running"
-            info "${appDisplayName} Running"
+            info "${appDisplayName} running"
             ;;
 
         *"Error"* | * )
             dialogUpdate "listitem: index: ${1}, status: error, statustext: Error"
             errorOut "${appDisplayName} Error"
-            overallHealth+="${appDisplayName} Error (${1}); "
+            overallHealth+="${appDisplayName} error; "
             ;;
 
     esac
@@ -1743,11 +1747,13 @@ function updateComputerInventory() {
 # Create Dialog
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-eval ${dialogBinary} --jsonfile ${dialogJSONFile} --json &
+notice "Current Elapsed Time: $(printf '%dh:%dm:%ds\n' $((SECONDS/3600)) $((SECONDS%3600/60)) $((SECONDS%60)))"
+
+eval ${dialogBinary} --jsonfile ${dialogJSONFile} &
 
 dialogUpdate "progresstext: Initializing …"
 
-# Band-Aid for macOS 15 `withAnimation` SwiftUI bug
+# Band-Aid for macOS 15+ `withAnimation` SwiftUI bug
 dialogUpdate "list: hide"
 dialogUpdate "list: show"
 
