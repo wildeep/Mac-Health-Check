@@ -19,15 +19,6 @@
 # Version 2.0.0, 17-Jul-2025, Dan K. Snelson (@dan-snelson)
 #   - Renamed "Computer Compliance" to "Mac Health Check" (thanks, @uurazzle and @scriptingosx!)
 #
-# Version 2.0.1, 18-Jul-2025, Dan K. Snelson (@dan-snelson)
-#   - Cleaned-up `checkExternal` error and failure reporting
-#   - Corrected `dialogBinary` execution parameters (thanks, @fraserhess, @bartreadon and @BigMacAdmin!)
-#   - Added "Current Elapsed Time" to document execution time prior to dialog creation
-#   - Improved `quitScript` function to immediately exit the script when the user clicks "Close"
-#   - Added "set -x" when `operationMode` is set to "test" (to better identify variable initialization issues)
-#   - (Hopefully) improved regex for "Palo Alto Networks GlobalProtect VPN IP address" to avoid "JSON import failed" error
-#   - Corrected Slack Webhook (thanks, @drtaru!)
-#
 ####################################################################################################
 
 
@@ -41,7 +32,7 @@
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin/
 
 # Script Version
-scriptVersion="2.0.1b4"
+scriptVersion="2.0.0"
 
 # Client-side Log
 scriptLog="/var/log/org.churchofjesuschrist.log"
@@ -1620,7 +1611,7 @@ function checkExternal() {
         *"Failed"* )
             dialogUpdate "listitem: index: ${1}, status: fail, statustext: Failed"
             errorOut "${appDisplayName} Failed"
-            overallHealth+="${appDisplayName} failure; "
+            overallHealth+="${appDisplayName}; "
             ;;
 
         *"Running"* ) 
@@ -1631,7 +1622,7 @@ function checkExternal() {
         *"Error"* | * )
             dialogUpdate "listitem: index: ${1}, status: error, statustext: Error"
             errorOut "${appDisplayName} Error"
-            overallHealth+="${appDisplayName} error; "
+            overallHealth+="${appDisplayName}; "
             ;;
 
     esac

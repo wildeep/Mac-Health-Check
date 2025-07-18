@@ -6,9 +6,9 @@ Mac Health Check provides a practical and user-friendly approach to surfacing Ma
 
 Built using the open-source utility [swiftDialog](https://github.com/swiftDialog/swiftDialog/wiki), the solution acts as a “heads-up display” that presents real-time system health and policy compliance status in a clear and interactive format.
 
-The tool is particularly valuable in IT support workflows, serving as an initial triage point for Tier 1 support by confirming network access, credentials, and Jamf connectivity, while also acting as a verification tool for Tier 2 teams both during and after remediation efforts.
+The tool is particularly valuable in IT support workflows, serving as an initial triage point for Tier 1 support by confirming network access, credentials, and Jamf Pro connectivity, while also acting as a verification tool for Tier 2 teams both during and after remediation efforts.
 
-Deployment of Mac Health Check involves configuring organizational defaults, embedding the script in Jamf, creating a policy to run it on demand and testing to ensure proper output and behavior.
+Deployment of Mac Health Check involves configuring organizational defaults, embedding the script in Jamf Pro, creating a policy to run it on demand and testing to ensure proper output and behavior.
 
 Administrators can customize the user interface using swiftDialog’s markdown and visual capabilities, making the experience both informative and approachable.
 
@@ -17,6 +17,9 @@ The tool logs results for IT review but does not alter device configurations, ma
 <img src="images/mhc_1.9.0_in_progress.png" alt="In progress" width="350"/>
 <img src="images/mhc_1.9.0_complete.png" alt="Completed" width="350"/>
 
+## Presentation
+
+- [University of Utah Mac Admins](https://stream.lib.utah.edu/index.php?c=details&id=13709) (July 2025)
 
 ## Features
 The following health checks and information reporting are included and the script operates in “test” mode by default. (Change `operationMode` to `production` when ready to deploy in production.)

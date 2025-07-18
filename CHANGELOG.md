@@ -2,7 +2,9 @@
 
 ## CHANGELOG
 
-### 2.0.1 (18-Jul-2025)
+### 2.0.0 (18-Jul-2025)
+- Renamed to "Mac Health Check" (thanks, @uurazzle and @scriptingosx!)
+- Added Webhook functionality
 - Cleaned-up `checkExternal` error and failure reporting
 - Corrected `dialogBinary` execution parameters (thanks, @fraserhess, @bartreadon and @BigMacAdmin!)
 - Added "Current Elapsed Time" to document execution time prior to dialog creation
@@ -10,10 +12,6 @@
 - Added "set -x" when `operationMode` is set to "test" (to better identify variable initialization issues; I'm looking at you, SSID!)
 - (Hopefully) improved regex for "Palo Alto Networks GlobalProtect VPN IP address" to avoid "JSON import failed" error
 - Corrected Slack Webhook (thanks, @drtaru!)
-
-### 2.0.0 (17-Jul-2025)
-- Renamed to "Mac Health Check" (thanks, @uurazzle and @scriptingosx!)
-- Added Webhook functionality
 
 ---
 
