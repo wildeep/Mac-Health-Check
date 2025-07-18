@@ -24,7 +24,8 @@
 #   - Corrected `dialogBinary` execution parameters (thanks, @fraserhess, @bartreadon and @BigMacAdmin!)
 #   - Added "Current Elapsed Time" to document execution time prior to dialog creation
 #   - Improved `quitScript` function to immediately exit the script when the user clicks "Close"
-#   - Added "set -x" when `operationMode` is set to "test" (to better identify variable initialization issues; I'm looking at you, SSID!)
+#   - Added "set -x" when `operationMode` is set to "test" (to better identify variable initialization issues)
+#   - (hopefully) improved regex for "Palo Alto Networks GlobalProtect VPN IP address" to avoid "JSON import failed" error
 #
 ####################################################################################################
 
@@ -39,7 +40,7 @@
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin/
 
 # Script Version
-scriptVersion="2.0.1b2"
+scriptVersion="2.0.1b3"
 
 # Client-side Log
 scriptLog="/var/log/org.churchofjesuschrist.log"
@@ -245,20 +246,15 @@ wiFiIpAddress=$( echo "$activeServices" | /usr/bin/sed '/^$/d' | head -n 1)
 globalProtectTest="/Applications/GlobalProtect.app"
 
 if [[ -e "${globalProtectTest}" ]] ; then
-
-    interface=$( ifconfig | grep -B1 "10.25" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1 )
-
+    interface=$( ifconfig | grep -B1 "10\." | grep -oE '10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | head -1 )
     if [[ -z "$interface" ]]; then
         globalProtectStatus="Inactive"
     else
-        globalProtectIP=$( ifconfig | grep -A2 -E "${interface}" | grep inet | awk '{ print $2 }' )
+        globalProtectIP=$( ifconfig | grep "inet ${interface}" | awk '{ print $2 }' )
         globalProtectStatus="${globalProtectIP}"
     fi
-
 else
-
     globalProtectStatus="GlobalProtect is NOT installed"
-
 fi
 
 
