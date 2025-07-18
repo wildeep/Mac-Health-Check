@@ -2,10 +2,12 @@
 
 ## CHANGELOG
 
-### 2.0.1 (17-Jul-2025)
+### 2.0.1 (18-Jul-2025)
 - Cleaned-up `checkExternal` error and failure reporting
 - Corrected `dialogBinary` execution parameters (thanks, @fraserhess, @bartreadon and @BigMacAdmin!)
 - Added "Current Elapsed Time" to document execution time prior to dialog creation
+- Improved `quitScript` function to immediately exit the script when the user clicks "Close"
+- Added "set -x" when `operationMode` is set to "test" (to better identify variable initialization issues; I'm looking at you, SSID!)
 
 ### 2.0.0 (17-Jul-2025)
 - Renamed to "Mac Health Check" (thanks, @uurazzle and @scriptingosx!)

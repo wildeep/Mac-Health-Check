@@ -19,10 +19,12 @@
 # Version 2.0.0, 17-Jul-2025, Dan K. Snelson (@dan-snelson)
 #   - Renamed "Computer Compliance" to "Mac Health Check" (thanks, @uurazzle and @scriptingosx!)
 #
-# Version 2.0.1, 17-Jul-2025, Dan K. Snelson (@dan-snelson)
+# Version 2.0.1, 18-Jul-2025, Dan K. Snelson (@dan-snelson)
 #   - Cleaned-up `checkExternal` error and failure reporting
 #   - Corrected `dialogBinary` execution parameters (thanks, @fraserhess, @bartreadon and @BigMacAdmin!)
 #   - Added "Current Elapsed Time" to document execution time prior to dialog creation
+#   - Improved `quitScript` function to immediately exit the script when the user clicks "Close"
+#   - Added "set -x" when `operationMode` is set to "test" (to better identify variable initialization issues; I'm looking at you, SSID!)
 #
 ####################################################################################################
 
@@ -37,7 +39,7 @@
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin/
 
 # Script Version
-scriptVersion="2.0.1b1"
+scriptVersion="2.0.1b2"
 
 # Client-side Log
 scriptLog="/var/log/org.churchofjesuschrist.log"
@@ -47,6 +49,11 @@ SECONDS="0"
 
 # Paramter 4: Operation Mode [ test | production ]
 operationMode="${4:-"test"}"
+
+    # Enable `set -x` if operation mode is "test" to help identify variable initialization issues (i.e., SSID)
+    if [[ "${operationMode}" == "test" ]]; then
+        set -x
+    fi
 
 # Parameter 5: Microsoft Teams or Slack Webhook URL [ Leave blank to disable (default) | https://microsoftTeams.webhook.com/URL | https://hooks.slack.com/services/URL ]
 webhookURL="${5:-""}"
@@ -680,6 +687,7 @@ function quitScript() {
         sleep 1
         ((completionTimer--))
         if [[ ${completionTimer} -lt 0 ]]; then break; fi;
+        if ! kill -0 "${dialogPID}" 2>/dev/null; then break; fi;
     done
     dialogUpdate "quit:"
 
@@ -1750,6 +1758,8 @@ function updateComputerInventory() {
 notice "Current Elapsed Time: $(printf '%dh:%dm:%ds\n' $((SECONDS/3600)) $((SECONDS%3600/60)) $((SECONDS%60)))"
 
 eval ${dialogBinary} --jsonfile ${dialogJSONFile} &
+dialogPID=$!
+info "Dialog PID: ${dialogPID}"
 
 dialogUpdate "progresstext: Initializing …"
 
