@@ -25,7 +25,8 @@
 #   - Added "Current Elapsed Time" to document execution time prior to dialog creation
 #   - Improved `quitScript` function to immediately exit the script when the user clicks "Close"
 #   - Added "set -x" when `operationMode` is set to "test" (to better identify variable initialization issues)
-#   - (hopefully) improved regex for "Palo Alto Networks GlobalProtect VPN IP address" to avoid "JSON import failed" error
+#   - (Hopefully) improved regex for "Palo Alto Networks GlobalProtect VPN IP address" to avoid "JSON import failed" error
+#   - Corrected Slack Webhook (thanks, @drtaru!)
 #
 ####################################################################################################
 
@@ -40,7 +41,7 @@
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin/
 
 # Script Version
-scriptVersion="2.0.1b3"
+scriptVersion="2.0.1b4"
 
 # Client-side Log
 scriptLog="/var/log/org.churchofjesuschrist.log"
@@ -494,7 +495,7 @@ function webHookMessage() {
                         },
                         {
                             "type": "mrkdwn",
-                            "text": "*Health Failures:*\n"${overallHealth%%; }""
+                            "text": "*Health Failures:*\n${overallHealth%%; }"
                         }
                     ]
                 },
