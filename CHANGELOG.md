@@ -6,7 +6,7 @@
 - Renamed to "Mac Health Check" (thanks, @uurazzle and @scriptingosx!)
 - Added Webhook functionality
 - Cleaned-up `checkExternal` error and failure reporting
-- Corrected `dialogBinary` execution parameters (thanks, @fraserhess, @bartreadon and @BigMacAdmin!)
+- Corrected `dialogBinary` execution parameters (thanks, @fraserhess, @bartreardon and @BigMacAdmin!)
 - Added "Current Elapsed Time" to document execution time prior to dialog creation
 - Improved `quitScript` function to immediately exit the script when the user clicks "Close"
 - Added "set -x" when `operationMode` is set to "test" (to better identify variable initialization issues; I'm looking at you, SSID!)
