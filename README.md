@@ -1,5 +1,9 @@
 # Mac Health Check
 
+> A practical and user-friendly approach to surfacing Mac compliance information directly to end-users via Jamf Pro Self Service
+
+<img src="images/Mac_Health_Check_Hero.png" alt="Mac Health Check Hero" width="600"/>
+
 ## Overview
 
 Mac Health Check provides a practical and user-friendly approach to surfacing Mac compliance information directly to end-users via Jamf Pro Self Service.
@@ -42,7 +46,7 @@ The following health checks and information reporting are included and the scrip
 
 ### Health Checks
 
-<img src="images/MHC_2.0.0_Free_Disk_Space.png" alt="In progress" width="600"/>
+<img src="images/MHC_2.0.0_Free_Disk_Space.png" alt="Health Checks" width="600"/>
 
 1. macOS Version
 1. Available Updates (including deferred updates)
