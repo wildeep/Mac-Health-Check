@@ -1273,7 +1273,7 @@ function checkFreeDiskSpace() {
 
     diskMessage="${humanReadableCheckName}: ${diskSpace}"
 
-    if [[ "${freePercentage}" < "${allowedFreeDiskPercentage}" ]]; then
+    if [[ "${freePercentage}" < "${allowedMinimumFreeDiskPercentage}" ]]; then
 
         dialogUpdate "listitem: index: ${1}, status: fail, statustext: ${diskSpace}"
         errorOut "${humanReadableCheckName}: ${diskSpace}"

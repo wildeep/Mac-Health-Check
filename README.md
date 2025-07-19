@@ -38,9 +38,6 @@ Mac Health Check is particularly valuable in IT support workflows, serving as an
 - Easily confirms remediation efforts
 - Provides peace-of-mind for end-users
 
-
-
-
 ## Features
 The following health checks and information reporting are included and the script operates in “test” mode by default. (Change `operationMode` to `production` when ready to deploy in production.)
 
@@ -127,6 +124,8 @@ Jamf Pro ID: 007; Site: Servers
 1. Jamf Pro ID
 
 ## Support
+
+<a href="https://slack.com/app_redirect?channel=C0977DRT7UY" target="_blank"><img src="images/qr-code-Slack-mac-health-check.png" alt="Mac Admins Slack #mac-health-check Channel" width="300"/></a>
 
 Community-supplied, best-effort support is available on the [Mac Admins Slack](https://www.macadmins.org/) (free, registration required) [#mac-health-check Channel](https://slack.com/app_redirect?channel=C0977DRT7UY), or you can open an [issue](https://github.com/dan-snelson/Mac-Health-Check/issues).
 
