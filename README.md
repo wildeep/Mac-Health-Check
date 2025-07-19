@@ -14,8 +14,10 @@ Administrators can customize the user interface using swiftDialog’s markdown a
 
 The tool logs results for IT review but does not alter device configurations, making it ideal for visibility without intrusion.
 
-<img src="images/mhc_1.9.0_in_progress.png" alt="In progress" width="350"/>
-<img src="images/mhc_1.9.0_complete.png" alt="Completed" width="350"/>
+<img src="images/MHC_2.0.0_Free_Disk_Space.png" alt="In progress" width="350"/>
+<img src="images/MHC_2.0.0_17_seconds.png" alt="In progress" width="350"/>
+<img src="images/MHC_2.0.0_Helpmessage.png" alt="In progress" width="350"/>
+
 
 ## Presentation
 
