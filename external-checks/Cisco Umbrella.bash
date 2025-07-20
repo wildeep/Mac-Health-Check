@@ -28,6 +28,9 @@
 #   Version 0.0.6, 14-May-2025, Dan K. Snelson (@dan-snelson)
 #       Changed filter check to nslookup of debug.opendns.com
 #
+#   Version 0.0.7, 18-Jun-2025, Dan K. Snelson (@dan-snelson)
+#       Skip filter check if enrolled in the last hour
+#
 ####################################################################################################
 
 
@@ -38,7 +41,7 @@
 #
 ####################################################################################################
 
-scriptVersion="0.0.6"
+scriptVersion="0.0.7"
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin/
 
 
@@ -80,11 +83,13 @@ function procesStatus() {
 # Determine Cisco Umbrella Organizational ID
 if [[ -e "/opt/cisco/secureclient/Umbrella/OrgInfo.json" ]]; then
     umbrellaOrgID=$( plutil -extract organizationId raw /opt/cisco/secureclient/Umbrella/OrgInfo.json )
-    protectionStatus=$( nslookup -q=txt debug.opendns.com | grep "${umbrellaOrgID}" )
-    if [[ -n "${protectionStatus}" ]]; then
-        processCheckResult+="Filter Check: Active; "
-    else
-        processCheckResult+="Filter Check: Failed; "
+    if [[ $(find /var/db/.AppleSetupDone -mmin +60) ]]; then
+        protectionStatus=$( nslookup -q=txt debug.opendns.com | grep "${umbrellaOrgID}" )
+        if [[ -n "${protectionStatus}" ]]; then
+            processCheckResult+="Filter Check: Active; "
+        else
+            processCheckResult+="Filter Check: Failed; "
+        fi
     fi
 else
     processCheckResult+="Filter Check Failed: Not Installed; "
