@@ -2,6 +2,12 @@
 
 ## CHANGELOG
 
+### 2.1.0 (21-Jul-2025)
+- Added an `operationMode` of "debug" to specifically enable swiftDialog debugging
+- Improved error handling for malformed `plistFilepath` variables (Addresses Issue #2)
+- Updated overlayicon to be MDM-agnostic (Addresses Issue #3)
+- Added Secure Token status check to `helpmessage` (Addresses Issue #4)
+
 ### 2.0.0 (18-Jul-2025)
 - Renamed to "Mac Health Check" (thanks, @uurazzle and @scriptingosx!)
 - Added Webhook functionality

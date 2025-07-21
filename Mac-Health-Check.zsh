@@ -19,6 +19,12 @@
 # Version 2.0.0, 17-Jul-2025, Dan K. Snelson (@dan-snelson)
 #   - Renamed "Computer Compliance" to "Mac Health Check" (thanks, @uurazzle and @scriptingosx!)
 #
+# Version 2.1.0, 21-Jul-2025, Dan K. Snelson (@dan-snelson)
+#   - Added an `operationMode` of "debug" to specifically enable swiftDialog debugging
+#   - Improved error handling for malformed `plistFilepath` variables (Addresses Issue #2)
+#   - Updated overlayicon to be MDM-agnostic (Addresses Issue #3)
+#   - Added Secure Token status check to `helpmessage` (Addresses Issue #4)
+#
 ####################################################################################################
 
 
@@ -32,7 +38,7 @@
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin/
 
 # Script Version
-scriptVersion="2.0.0"
+scriptVersion="2.1.0b1"
 
 # Client-side Log
 scriptLog="/var/log/org.churchofjesuschrist.log"
@@ -40,13 +46,11 @@ scriptLog="/var/log/org.churchofjesuschrist.log"
 # Elapsed Time
 SECONDS="0"
 
-# Paramter 4: Operation Mode [ test | production ]
-operationMode="${4:-"test"}"
+# Paramter 4: Operation Mode [ test | debug | production ]
+operationMode="${4:-"debug"}"
 
-    # Enable `set -x` if operation mode is "test" to help identify variable initialization issues (i.e., SSID)
-    if [[ "${operationMode}" == "test" ]]; then
-        set -x
-    fi
+    # Enable `set -x` if operation mode is "test" or "debug" to help identify variable initialization issues (i.e., SSID)
+    [[ "${operationMode}" == "test" || "${operationMode}" == "debug" ]] && set -x
 
 # Parameter 5: Microsoft Teams or Slack Webhook URL [ Leave blank to disable (default) | https://microsoftTeams.webhook.com/URL | https://hooks.slack.com/services/URL ]
 webhookURL="${5:-""}"
@@ -62,6 +66,9 @@ humanReadableScriptName="Mac Health Check"
 
 # Organization's Script Name
 organizationScriptName="MHC"
+
+# Organization's Overlayicon URL
+organizationOverlayiconURL=""
 
 # Organization's Color Scheme
 organizationColorScheme="weight=semibold,colour1=#ef9d51,colour2=#ef7951"
@@ -112,10 +119,10 @@ plistFilepath="/Library/Managed Preferences/${jamfProVariables}"
 if [[ -e "${plistFilepath}" ]]; then
 
     # Jamf Pro ID
-    jamfProID=$( defaults read "${plistFilepath}" "Jamf Pro ID" 2>&1 )
+    jamfProID=$( defaults read "${plistFilepath}" "Jamf Pro ID" 2>/dev/null )
 
     # Site Name
-    jamfProSiteName=$( defaults read "${plistFilepath}" "Site Name" 2>&1 )
+    jamfProSiteName=$( defaults read "${plistFilepath}" "Site Name" 2>/dev/null )
 
 fi
 
@@ -157,6 +164,14 @@ loggedInUserGroupMembership=$( id -Gn "${loggedInUser}" )
 if [[ ${loggedInUserGroupMembership} == *"admin"* ]]; then localAdminWarning="WARNING: '$loggedInUser' IS A MEMBER OF 'admin'; "; fi
 loggedInUserHomeDirectory=$( dscl . read "/Users/${loggedInUser}" NFSHomeDirectory | awk -F ' ' '{print $2}' )
 
+# Secure Token Status
+secureTokenStatus=$( sysadminctl -secureTokenStatus ${loggedInUser} 2>&1 )
+case "${secureTokenStatus}" in
+    *"ENABLED"*)    secureToken="Enabled"   ;;
+    *"DISABLED"*)   secureToken="Disabled"  ;;
+    *)              secureToken="Unknown"   ;;
+esac
+
 # Kerberos Single Sign-on Extension
 if [[ -n "${kerberosRealm}" ]]; then
     /usr/bin/su \- "${loggedInUser}" -c "/usr/bin/app-sso -i ${kerberosRealm}" > /var/tmp/app-sso.plist
@@ -172,7 +187,6 @@ fi
 
 # Platform Single Sign-on Extension
 pssoeEmail=$( dscl . read /Users/"${loggedInUser}" dsAttrTypeStandard:AltSecurityIdentities 2>/dev/null | awk -F'SSO:' '/PlatformSSO/ {print $2}' )
-
 if [[ -n "${pssoeEmail}" ]]; then
     platformSSOeResult="${pssoeEmail}"
 else
@@ -266,9 +280,9 @@ fi
 
 # swiftDialog Binary Path
 dialogBinary="/usr/local/bin/dialog"
-case ${operationMode} in
-    "test" ) dialogBinary="${dialogBinary} --verbose --resizable --debug red" ;;
-esac
+
+# Enable debugging options for swiftDialog
+[[ "${operationMode}" == "debug" ]] && dialogBinary="${dialogBinary} --verbose --resizable --debug red"
 
 # swiftDialog JSON File
 dialogJSONFile=$( mktemp -u /var/tmp/dialogJSONFile_${organizationScriptName}.XXXX )
@@ -289,9 +303,14 @@ else
     icon="SF=desktopcomputer.and.arrow.down,${organizationColorScheme}"
 fi
 
-# Create `overlayicon` from Self Service's custom icon (thanks, @meschwartz!)
-xxd -p -s 260 "$(defaults read /Library/Preferences/com.jamfsoftware.jamf self_service_app_path)"/Icon$'\r'/..namedfork/rsrc | xxd -r -p > /var/tmp/overlayicon.icns
-overlayicon="/var/tmp/overlayicon.icns"
+# Download the overlayicon from ${organizationOverlayiconURL}
+curl -o "/var/tmp/overlayicon.png" "${organizationOverlayiconURL}" --silent --show-error --fail
+if [[ "$?" -ne 0 ]]; then
+    echo "Error: Failed to download the overlayicon from '${brandingImageURL}'."
+    overlayicon="/System/Library/CoreServices/Finder.app"
+else
+    overlayicon="/var/tmp/overlayicon.png"
+fi
 
 
 
@@ -314,7 +333,7 @@ supportKBURL="[${supportKB}](${infobuttonaction})"
 # Help Message Variables
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-helpmessage="For assistance, please contact: **${supportTeamName}**<br>- **Telephone:** ${supportTeamPhone}<br>- **Email:** ${supportTeamEmail}<br>- **Website:** ${supportTeamWebsite}<br>- **Knowledge Base Article:** ${supportKBURL}<br><br>**User Information:**<br>- **Full Name:** ${loggedInUserFullname}<br>- **User Name:** ${loggedInUser}<br>- **User ID:** ${loggedInUserID}<br>- **Location Services:** ${locationServicesStatus}<br>- **Microsoft OneDrive Sync Date:** ${oneDriveSyncDate}<br>- **Platform SSOe:** ${platformSSOeResult}<br><br>**Computer Information:**<br>- **macOS:** ${osVersion} (${osBuild})<br>- **Computer Name:** ${computerName}<br>- **Serial Number:** ${serialNumber}<br>- **Wi-Fi:** ${ssid}<br>- ${wiFiIpAddress}<br>- **VPN IP:** ${globalProtectStatus}<br><br>**Jamf Pro Information:**<br>- **Site:** ${jamfProSiteName}"
+helpmessage="For assistance, please contact: **${supportTeamName}**<br>- **Telephone:** ${supportTeamPhone}<br>- **Email:** ${supportTeamEmail}<br>- **Website:** ${supportTeamWebsite}<br>- **Knowledge Base Article:** ${supportKBURL}<br><br>**User Information:**<br>- **Full Name:** ${loggedInUserFullname}<br>- **User Name:** ${loggedInUser}<br>- **User ID:** ${loggedInUserID}<br>- **Secure Token:** ${secureToken}<br>- **Location Services:** ${locationServicesStatus}<br>- **Microsoft OneDrive Sync Date:** ${oneDriveSyncDate}<br>- **Platform SSOe:** ${platformSSOeResult}<br><br>**Computer Information:**<br>- **macOS:** ${osVersion} (${osBuild})<br>- **Computer Name:** ${computerName}<br>- **Serial Number:** ${serialNumber}<br>- **Wi-Fi:** ${ssid}<br>- ${wiFiIpAddress}<br>- **VPN IP:** ${globalProtectStatus}<br><br>**Jamf Pro Information:**<br>- **Site:** ${jamfProSiteName}"
 
 helpimage="qr=${infobuttonaction}"
 
@@ -689,7 +708,9 @@ function quitScript() {
     rm -rf "${dialogJSONFile}"
 
     # Remove overlay icon
-    rm -rf "${overlayicon}"
+    if [[ -f "${overlayicon}" ]] && [[ "${overlayicon}" != "/System/Library/CoreServices/Finder.app" ]]; then
+        rm -rf "${overlayicon}"
+    fi
 
     # Remove default dialog.log
     rm -rf /var/tmp/dialog.log
