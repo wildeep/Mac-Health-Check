@@ -76,6 +76,9 @@ organizationColorScheme="weight=semibold,colour1=#ef9d51,colour2=#ef7951"
 # Organization's Kerberos Realm (leave blank to disable check)
 kerberosRealm=""
 
+# Organization's Firewall Type [socketfilterfw | pf]
+organizationFirewall="socketfilterfw"
+
 # "Anticipation" Duration (in seconds)
 anticipationDuration="2"
 
@@ -1184,7 +1187,11 @@ function checkFirewall() {
 
     sleep "${anticipationDuration}"
 
-    firewallCheck=$( /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate )
+    if [[ "$organizationFirewall" == "socketfilterfw" ]]; then
+        firewallCheck=$( /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate )
+    elif [[ "$organizationFirewall" == "pf" ]]; then
+        firewallCheck=$( /sbin/pfctl -s info )
+    fi
 
     case ${firewallCheck} in
 
