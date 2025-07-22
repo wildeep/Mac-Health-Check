@@ -80,6 +80,7 @@ The following health checks and information reporting are included and the scrip
 - Full Name
 - User Name
 - User ID
+- Secure Token
 - Location Services
 - Microsoft OneDrive Sync Date
 - Platform Single Sign-on Extension

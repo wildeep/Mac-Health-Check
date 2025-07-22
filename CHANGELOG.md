@@ -7,6 +7,7 @@
 - Improved error handling for malformed `plistFilepath` variables (Addresses Issue #2)
 - Updated overlayicon to be MDM-agnostic (Addresses Issue #3)
 - Added Secure Token status check to `helpmessage` (Addresses Issue #4)
+- Addition of Packet Firewall status check option (Pull Request #5; thanks, @HowardGMac!)
 
 ### 2.0.0 (18-Jul-2025)
 - Renamed to "Mac Health Check" (thanks, @uurazzle and @scriptingosx!)
