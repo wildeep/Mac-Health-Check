@@ -2,7 +2,10 @@
 
 ## CHANGELOG
 
-### 2.1.0 (21-Jul-2025)
+### 3.0.0 (22-Jul-2025)
+- First (attempt at a) MDM-agnostic release
+
+### 2.1.0 (22-Jul-2025)
 - Added an `operationMode` of "debug" to specifically enable swiftDialog debugging
 - Improved error handling for malformed `plistFilepath` variables (Addresses Issue #2)
 - Updated overlayicon to be MDM-agnostic (Addresses Issue #3)

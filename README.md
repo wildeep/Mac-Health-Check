@@ -2,17 +2,17 @@
 
 # Mac Health Check
 
-> A practical and user-friendly approach to surfacing Mac compliance information directly to end-users via Jamf Pro Self Service
+> A practical and user-friendly approach to surfacing Mac compliance information directly to end-users via your MDM's Self Service
 
 <img src="images/Mac_Health_Check_Hero.png" alt="Mac Health Check Hero" width="600"/>
 
 ## Overview
 
-Mac Health Check provides a practical and user-friendly approach to surfacing Mac compliance information directly to end-users via Jamf Pro Self Service.
+Mac Health Check provides a practical and user-friendly approach to surfacing Mac compliance information directly to end-users via an MDM's Self Service.
 
 Built using the open-source utility [swiftDialog](https://github.com/swiftDialog/swiftDialog/wiki), the solution acts as a “heads-up display” that presents real-time system health and policy compliance status in a clear and interactive format.
 
-Deployment of Mac Health Check involves configuring organizational defaults, embedding the script in Jamf Pro, creating a policy to run it on demand and testing to ensure proper output and behavior.
+Deployment of Mac Health Check involves configuring organizational defaults, embedding the script in your MDM, creating a policy to run it on demand and testing to ensure proper output and behavior.
 
 Administrators can customize the user interface using swiftDialog’s visual capabilities, making the experience both informative and approachable.
 
@@ -25,7 +25,7 @@ The tool logs results for IT review, while not altering device configurations, m
 
 ## Use Cases
 
-Mac Health Check is particularly valuable in IT support workflows, serving as an initial triage point for Tier 1 support by confirming network access, credentials, and Jamf Pro connectivity, while also acting as a verification tool for Tier 2 teams both during and after remediation efforts.
+Mac Health Check is particularly valuable in IT support workflows, serving as an initial triage point for Tier 1 support by confirming network access, credentials, and MDM connectivity, while also acting as a verification tool for Tier 2 teams both during and after remediation efforts.
 
 ### Step Zero for Tier 1
 
@@ -57,16 +57,17 @@ The following health checks and information reporting are included and the scrip
 1. MDM Profile
 1. MDM Certificate Expiration
 1. Apple Push Notification service
-1. Jamf Pro Check-in
-1. Jamf Pro Inventory
+1. Jamf Pro Check-in**
+1. Jamf Pro Inventory**
 1. BeyondTrust Privilege Management*
 1. Cisco Umbrella*
 1. CrowdStrike Falcon*
 1. Palo Alto GlobalProtect*
 1. Network Quality Test
-1. Update Computer Inventory
+1. Update Computer Inventory**
 
 *Requires [external check](/external-checks/README.md)
+**Required Jamf Pro
 
 ### Information Reporting
 
@@ -95,10 +96,10 @@ The following health checks and information reporting are included and the scrip
 - Wi-FI IP Address
 - VPN IP Address
 
-#### Jamf Pro Information**
+#### Jamf Pro Information***
 - Site
 
-**[Payload Variables for Configuration Profiles](https://learn.jamf.com/en-US/bundle/jamf-pro-documentation-11.18.0/page/Computer_Configuration_Profiles.html#ariaid-title2)
+***[Payload Variables for Configuration Profiles](https://learn.jamf.com/en-US/bundle/jamf-pro-documentation-11.18.0/page/Computer_Configuration_Profiles.html#ariaid-title2)
 
 ### Policy Log Reporting
 
