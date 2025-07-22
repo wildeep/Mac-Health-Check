@@ -25,6 +25,7 @@
 #   - Updated overlayicon to be MDM-agnostic (Addresses Issue #3)
 #   - Added Secure Token status check to `helpmessage` (Addresses Issue #4)
 #   - Addition of Packet Firewall status check option (Pull Request #5; thanks, @HowardGMac!)
+#   - Updated MHC_icon.png
 #
 ####################################################################################################
 
@@ -39,7 +40,7 @@
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin/
 
 # Script Version
-scriptVersion="2.1.0b2"
+scriptVersion="2.1.0b3"
 
 # Client-side Log
 scriptLog="/var/log/org.churchofjesuschrist.log"
@@ -570,7 +571,7 @@ EOF
                                         "items": [
                                             {
                                                 "type": "Image",
-                                                "url": "https://usw2.ics.services.jamfcloud.com/icon/hash_277f145cfd2855478f571a36a5c51798e1771a372054d84202d857295db5b345",
+                                                "url": "https://usw2.ics.services.jamfcloud.com/icon/hash_38a7af6b0231e76e3f4842ee3c8a18fb8b1642750f6a77385eff96707124e1fb",
                                                 "altText": "Mac Health Check",
                                                 "size": "Small"
                                             }
