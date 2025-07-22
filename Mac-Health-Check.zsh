@@ -24,6 +24,7 @@
 #   - Improved error handling for malformed `plistFilepath` variables (Addresses Issue #2)
 #   - Updated overlayicon to be MDM-agnostic (Addresses Issue #3)
 #   - Added Secure Token status check to `helpmessage` (Addresses Issue #4)
+#   - Addition of Packet Firewall status check option (Pull Request #5; thanks, @HowardGMac!)
 #
 ####################################################################################################
 
@@ -38,7 +39,7 @@
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin/
 
 # Script Version
-scriptVersion="2.1.0b1"
+scriptVersion="2.1.0b2"
 
 # Client-side Log
 scriptLog="/var/log/org.churchofjesuschrist.log"
