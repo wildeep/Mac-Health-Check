@@ -1167,12 +1167,7 @@ function checkFirewall() {
 
     case ${firewallCheck} in
 
-        *"enabled"* ) 
-            dialogUpdate "listitem: index: ${1}, status: success, statustext: Enabled"
-            info "${humanReadableCheckName}: Enabled"
-            ;;
-        
-        *"blocking all non-essential incoming connections"* ) 
+        *"enabled"* | *"Enabled"*  | *"is blocking"*) 
             dialogUpdate "listitem: index: ${1}, status: success, statustext: Enabled"
             info "${humanReadableCheckName}: Enabled"
             ;;
