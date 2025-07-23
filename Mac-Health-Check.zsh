@@ -1171,6 +1171,11 @@ function checkFirewall() {
             dialogUpdate "listitem: index: ${1}, status: success, statustext: Enabled"
             info "${humanReadableCheckName}: Enabled"
             ;;
+        
+        *"blocking all non-essential incoming connections"* ) 
+            dialogUpdate "listitem: index: ${1}, status: success, statustext: Enabled"
+            info "${humanReadableCheckName}: Enabled"
+            ;;
 
         *  )
             dialogUpdate "listitem: index: ${1}, status: fail, statustext: Failed"
