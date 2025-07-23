@@ -130,6 +130,10 @@ case "${serverURL}" in
         # echo "MDM Vendor is JumpCloud"
         mdmVendor="JumpCloud"
         ;;
+    *mosyle* )
+        # echo "MDM Vendor is Mosyle"
+        mdmVendor="Mosyle"
+        ;;
     * )
         echo "Unable to determine MDM from ServerURL"
     ;;
