@@ -16,7 +16,7 @@
 #
 # HISTORY
 #
-# Version 3.0.0, 22-Jul-2025, Dan K. Snelson (@dan-snelson)
+# Version 3.0.0, 23-Jul-2025, Dan K. Snelson (@dan-snelson)
 #   - First (attempt at a) MDM-agnostic release
 #
 ####################################################################################################
@@ -32,7 +32,7 @@
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin/
 
 # Script Version
-scriptVersion="3.0.0b1"
+scriptVersion="3.0.0b2"
 
 # Client-side Log
 scriptLog="/var/log/org.churchofjesuschrist.log"
@@ -116,24 +116,24 @@ else
 fi
 
 case "${serverURL}" in
+
     *jamf* | *jss* )
-        # echo "MDM Vendor is Jamf"
         mdmVendor="Jamf Pro"
+        [[ -f "/private/var/log/jamf.log" ]] || { echo "jamf.log missing; exiting."; exit 1; }
         ;;
     
     *microsoft* )
-        # echo "MDM Vendor is Microsoft"
         mdmVendor="Microsoft Intune"
         ;;
 
     *jumpcloud* )
-        # echo "MDM Vendor is JumpCloud"
         mdmVendor="JumpCloud"
         ;;
+
     *mosyle* )
-        # echo "MDM Vendor is Mosyle"
         mdmVendor="Mosyle"
         ;;
+
     * )
         echo "Unable to determine MDM from ServerURL"
     ;;
@@ -915,7 +915,7 @@ fi
 # Pre-flight Check: Logging Preamble
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-preFlight "\n\n###\n# $humanReadableScriptName (${scriptVersion})\n# https://snelson.us/mhc\n###\n"
+preFlight "\n\n###\n# $humanReadableScriptName (${scriptVersion})\n#MDM Vendor: ${mdmVendor}\n#\n# https://snelson.us/mhc\n###\n"
 preFlight "Initiating …"
 
 
@@ -936,16 +936,6 @@ preFlight "${loggedInUserFullname} (${loggedInUser}) [${loggedInUserID}]"
 if [[ $(id -u) -ne 0 ]]; then
     fatal "This script must be run as root; exiting."
 fi
-
-
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Pre-flight Check: Confirm jamf.log exists
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
-# if [[ ! -f "/private/var/log/jamf.log" ]]; then
-#     fatal "jamf.log missing; exiting."
-# fi
 
 
 
