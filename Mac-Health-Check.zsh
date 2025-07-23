@@ -27,6 +27,15 @@
 #   - Addition of Packet Firewall status check option (Pull Request #5; thanks, @HowardGMac!)
 #   - Updated MHC_icon.png
 #
+# Version 2.1.0, 23-Jul-2025, Dan K. Snelson (@dan-snelson)
+#   - Added an `operationMode` of "debug" to specifically enable swiftDialog debugging
+#   - Improved error handling for malformed `plistFilepath` variables (Addresses Issue #2)
+#   - Updated overlayicon to be MDM-agnostic (Addresses Issue #3)
+#   - Added Secure Token status check to `helpmessage` (Addresses Issue #4)
+#   - Addition of Packet Firewall status check option (Pull Request #5; thanks, @HowardGMac!)
+#   - Updated MHC_icon.png
+#   - Update Firewall Cases to include one for State 2 (Pull Request #8; thanks, @mam5hs!)
+#
 ####################################################################################################
 
 
@@ -40,7 +49,7 @@
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin/
 
 # Script Version
-scriptVersion="2.1.0b3"
+scriptVersion="2.1.0b4"
 
 # Client-side Log
 scriptLog="/var/log/org.churchofjesuschrist.log"
@@ -1197,12 +1206,12 @@ function checkFirewall() {
 
     case ${firewallCheck} in
 
-        *"enabled"* | *"Enabled"* )
+        *"enabled"* | *"Enabled"* | *"is blocking"* ) 
             dialogUpdate "listitem: index: ${1}, status: success, statustext: Enabled"
             info "${humanReadableCheckName}: Enabled"
             ;;
 
-        *  )
+        * )
             dialogUpdate "listitem: index: ${1}, status: fail, statustext: Failed"
             errorOut "${humanReadableCheckName}: Failed"
             overallHealth+="${humanReadableCheckName}; "
