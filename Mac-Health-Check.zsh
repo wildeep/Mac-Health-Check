@@ -32,7 +32,7 @@
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin/
 
 # Script Version
-scriptVersion="3.0.0b2"
+scriptVersion="3.0.0b3"
 
 # Client-side Log
 scriptLog="/var/log/org.churchofjesuschrist.log"
@@ -41,7 +41,7 @@ scriptLog="/var/log/org.churchofjesuschrist.log"
 SECONDS="0"
 
 # Paramter 4: Operation Mode [ test | debug | production ]
-operationMode="${4:-"production"}"
+operationMode="${4:-"debug"}"
 
     # Enable `set -x` if operation mode is "test" or "debug" to help identify variable initialization issues (i.e., SSID)
     [[ "${operationMode}" == "test" || "${operationMode}" == "debug" ]] && set -x
@@ -137,6 +137,7 @@ case "${serverURL}" in
     * )
         echo "Unable to determine MDM from ServerURL"
     ;;
+
 esac
 
 
@@ -1991,9 +1992,9 @@ else
 
     # Non-production Mode
 
-    dialogUpdate "title: ${humanReadableScriptName} (${scriptVersion}) [Operation Mode: ${operationMode}]"
+    dialogUpdate "title: ${humanReadableScriptName} (${scriptVersion}) [ MDM Vendor: ${mdmVendor} | Operation Mode: ${operationMode} ]"
 
-    listitemLength=$(get_json_value "${dialogJSON}" "listitem.length")
+    listitemLength=$(get_json_value "${combinedJSON}" "listitem.length")
 
     for (( i=0; i<listitemLength; i++ )); do
 
