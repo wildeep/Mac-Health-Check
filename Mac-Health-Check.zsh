@@ -3,11 +3,12 @@
 
 ####################################################################################################
 #
-# Name: Mac Health Check
+# Mac Health Check
 #
-# Purpose: Provides users a "heads-up display" of critical computer health information via swiftDialog
+# A practical and user-friendly approach to surfacing Mac compliance information directly to end-users
+# via Jamf Pro Self Service
 #
-# Information: https://snelson.us/mhc
+# https://snelson.us/mhc
 #
 # Inspired by:
 #   - @talkingmoose and @robjschroeder
@@ -16,8 +17,16 @@
 #
 # HISTORY
 #
-# Version 2.0.0, 17-Jul-2025, Dan K. Snelson (@dan-snelson)
-#   - Renamed "Computer Compliance" to "Mac Health Check" (thanks, @uurazzle and @scriptingosx!)
+# Version 2.1.0, 24-Jul-2025, Dan K. Snelson (@dan-snelson)
+#   - Added an `operationMode` of "debug" to specifically enable swiftDialog debugging
+#   - Improved error handling for malformed `plistFilepath` variables (Addresses Issue #2)
+#   - Updated overlayicon to be MDM-agnostic (Addresses Issue #3)
+#   - Added Secure Token status check to `helpmessage` (Addresses Issue #4)
+#   - Addition of Packet Firewall status check option (Pull Request #5; thanks, @HowardGMac!)
+#   - Updated MHC_icon.png
+#   - Update Firewall Cases to include one for State 2 (Pull Request #8; thanks, @mam5hs!)
+#   - Fix for Free Disk Space comparison bug (Addresses Issue #10). (Pull Request #11; thanks again, @HowardGMac!)
+#   - Added bootstrap token status
 #
 ####################################################################################################
 
@@ -32,7 +41,7 @@
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin/
 
 # Script Version
-scriptVersion="2.0.0"
+scriptVersion="2.1.0"
 
 # Client-side Log
 scriptLog="/var/log/org.churchofjesuschrist.log"
@@ -40,13 +49,11 @@ scriptLog="/var/log/org.churchofjesuschrist.log"
 # Elapsed Time
 SECONDS="0"
 
-# Paramter 4: Operation Mode [ test | production ]
-operationMode="${4:-"test"}"
+# Paramter 4: Operation Mode [ test | debug | production ]
+operationMode="${4:-"debug"}"
 
-    # Enable `set -x` if operation mode is "test" to help identify variable initialization issues (i.e., SSID)
-    if [[ "${operationMode}" == "test" ]]; then
-        set -x
-    fi
+    # Enable `set -x` if operation mode is "test" or "debug" to help identify variable initialization issues (i.e., SSID)
+    [[ "${operationMode}" == "test" || "${operationMode}" == "debug" ]] && set -x
 
 # Parameter 5: Microsoft Teams or Slack Webhook URL [ Leave blank to disable (default) | https://microsoftTeams.webhook.com/URL | https://hooks.slack.com/services/URL ]
 webhookURL="${5:-""}"
@@ -63,11 +70,17 @@ humanReadableScriptName="Mac Health Check"
 # Organization's Script Name
 organizationScriptName="MHC"
 
+# Organization's Overlayicon URL
+organizationOverlayiconURL=""
+
 # Organization's Color Scheme
 organizationColorScheme="weight=semibold,colour1=#ef9d51,colour2=#ef7951"
 
 # Organization's Kerberos Realm (leave blank to disable check)
 kerberosRealm=""
+
+# Organization's Firewall Type [socketfilterfw | pf]
+organizationFirewall="socketfilterfw"
 
 # "Anticipation" Duration (in seconds)
 anticipationDuration="2"
@@ -109,17 +122,17 @@ plistFilepath="/Library/Managed Preferences/${jamfProVariables}"
 if [[ -e "${plistFilepath}" ]]; then
 
     # Jamf Pro ID
-    jamfProID=$( defaults read "${plistFilepath}" "Jamf Pro ID" 2>&1 )
+    jamfProID=$( defaults read "${plistFilepath}" "Jamf Pro ID" 2>/dev/null )
 
     # Site Name
-    jamfProSiteName=$( defaults read "${plistFilepath}" "Site Name" 2>&1 )
+    jamfProSiteName=$( defaults read "${plistFilepath}" "Site Name" 2>/dev/null )
 
 fi
 
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Operating System Variables
+# Computer Variables
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 osVersion=$( sw_vers -productVersion )
@@ -132,6 +145,7 @@ computerName=$( scutil --get ComputerName | /usr/bin/sed 's/’//' )
 computerModel=$( sysctl -n hw.model )
 localHostName=$( scutil --get LocalHostName )
 batteryCycleCount=$( ioreg -r -c "AppleSmartBattery" | /usr/bin/grep '"CycleCount" = ' | /usr/bin/awk '{ print $3 }' | /usr/bin/sed s/\"//g )
+bootstrapTokenStatus=$( profiles status -type bootstraptoken | awk '{sub(/^profiles: /, ""); printf "%s", $0; if (NR < 2) printf "; "}' | sed 's/; $//' )
 ssid=$( system_profiler SPAirPortDataType | awk '/Current Network Information:/ { getline; print substr($0, 13, (length($0) - 13)); exit }' )
 sshStatus=$( systemsetup -getremotelogin | awk -F ": " '{ print $2 }' )
 networkTimeServer=$( systemsetup -getnetworktimeserver )
@@ -154,6 +168,14 @@ loggedInUserGroupMembership=$( id -Gn "${loggedInUser}" )
 if [[ ${loggedInUserGroupMembership} == *"admin"* ]]; then localAdminWarning="WARNING: '$loggedInUser' IS A MEMBER OF 'admin'; "; fi
 loggedInUserHomeDirectory=$( dscl . read "/Users/${loggedInUser}" NFSHomeDirectory | awk -F ' ' '{print $2}' )
 
+# Secure Token Status
+secureTokenStatus=$( sysadminctl -secureTokenStatus ${loggedInUser} 2>&1 )
+case "${secureTokenStatus}" in
+    *"ENABLED"*)    secureToken="Enabled"   ;;
+    *"DISABLED"*)   secureToken="Disabled"  ;;
+    *)              secureToken="Unknown"   ;;
+esac
+
 # Kerberos Single Sign-on Extension
 if [[ -n "${kerberosRealm}" ]]; then
     /usr/bin/su \- "${loggedInUser}" -c "/usr/bin/app-sso -i ${kerberosRealm}" > /var/tmp/app-sso.plist
@@ -169,7 +191,6 @@ fi
 
 # Platform Single Sign-on Extension
 pssoeEmail=$( dscl . read /Users/"${loggedInUser}" dsAttrTypeStandard:AltSecurityIdentities 2>/dev/null | awk -F'SSO:' '/PlatformSSO/ {print $2}' )
-
 if [[ -n "${pssoeEmail}" ]]; then
     platformSSOeResult="${pssoeEmail}"
 else
@@ -263,9 +284,9 @@ fi
 
 # swiftDialog Binary Path
 dialogBinary="/usr/local/bin/dialog"
-case ${operationMode} in
-    "test" ) dialogBinary="${dialogBinary} --verbose --resizable --debug red" ;;
-esac
+
+# Enable debugging options for swiftDialog
+[[ "${operationMode}" == "debug" ]] && dialogBinary="${dialogBinary} --verbose --resizable --debug red"
 
 # swiftDialog JSON File
 dialogJSONFile=$( mktemp -u /var/tmp/dialogJSONFile_${organizationScriptName}.XXXX )
@@ -286,9 +307,14 @@ else
     icon="SF=desktopcomputer.and.arrow.down,${organizationColorScheme}"
 fi
 
-# Create `overlayicon` from Self Service's custom icon (thanks, @meschwartz!)
-xxd -p -s 260 "$(defaults read /Library/Preferences/com.jamfsoftware.jamf self_service_app_path)"/Icon$'\r'/..namedfork/rsrc | xxd -r -p > /var/tmp/overlayicon.icns
-overlayicon="/var/tmp/overlayicon.icns"
+# Download the overlayicon from ${organizationOverlayiconURL}
+curl -o "/var/tmp/overlayicon.png" "${organizationOverlayiconURL}" --silent --show-error --fail
+if [[ "$?" -ne 0 ]]; then
+    echo "Error: Failed to download the overlayicon from '${brandingImageURL}'."
+    overlayicon="/System/Library/CoreServices/Finder.app"
+else
+    overlayicon="/var/tmp/overlayicon.png"
+fi
 
 
 
@@ -311,7 +337,7 @@ supportKBURL="[${supportKB}](${infobuttonaction})"
 # Help Message Variables
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-helpmessage="For assistance, please contact: **${supportTeamName}**<br>- **Telephone:** ${supportTeamPhone}<br>- **Email:** ${supportTeamEmail}<br>- **Website:** ${supportTeamWebsite}<br>- **Knowledge Base Article:** ${supportKBURL}<br><br>**User Information:**<br>- **Full Name:** ${loggedInUserFullname}<br>- **User Name:** ${loggedInUser}<br>- **User ID:** ${loggedInUserID}<br>- **Location Services:** ${locationServicesStatus}<br>- **Microsoft OneDrive Sync Date:** ${oneDriveSyncDate}<br>- **Platform SSOe:** ${platformSSOeResult}<br><br>**Computer Information:**<br>- **macOS:** ${osVersion} (${osBuild})<br>- **Computer Name:** ${computerName}<br>- **Serial Number:** ${serialNumber}<br>- **Wi-Fi:** ${ssid}<br>- ${wiFiIpAddress}<br>- **VPN IP:** ${globalProtectStatus}<br><br>**Jamf Pro Information:**<br>- **Site:** ${jamfProSiteName}"
+helpmessage="For assistance, please contact: **${supportTeamName}**<br>- **Telephone:** ${supportTeamPhone}<br>- **Email:** ${supportTeamEmail}<br>- **Website:** ${supportTeamWebsite}<br>- **Knowledge Base Article:** ${supportKBURL}<br><br>**User Information:**<br>- **Full Name:** ${loggedInUserFullname}<br>- **User Name:** ${loggedInUser}<br>- **User ID:** ${loggedInUserID}<br>- **Secure Token:** ${secureToken}<br>- **Location Services:** ${locationServicesStatus}<br>- **Microsoft OneDrive Sync Date:** ${oneDriveSyncDate}<br>- **Platform SSOe:** ${platformSSOeResult}<br><br>**Computer Information:**<br>- **macOS:** ${osVersion} (${osBuild})<br>- **Computer Name:** ${computerName}<br>- **Serial Number:** ${serialNumber}<br>- **Wi-Fi:** ${ssid}<br>- ${wiFiIpAddress}<br>- **VPN IP:** ${globalProtectStatus}<br><br>**Jamf Pro Information:**<br>- **Site:** ${jamfProSiteName}"
 
 helpimage="qr=${infobuttonaction}"
 
@@ -547,7 +573,7 @@ EOF
                                         "items": [
                                             {
                                                 "type": "Image",
-                                                "url": "https://usw2.ics.services.jamfcloud.com/icon/hash_277f145cfd2855478f571a36a5c51798e1771a372054d84202d857295db5b345",
+                                                "url": "https://usw2.ics.services.jamfcloud.com/icon/hash_38a7af6b0231e76e3f4842ee3c8a18fb8b1642750f6a77385eff96707124e1fb",
                                                 "altText": "Mac Health Check",
                                                 "size": "Small"
                                             }
@@ -641,7 +667,7 @@ function quitScript() {
 
     quitOut "Exiting …"
 
-    notice "${localAdminWarning}User: ${loggedInUserFullname} (${loggedInUser}) [${loggedInUserID}] ${loggedInUserGroupMembership}; sudo Check: ${sudoStatus}; sudoers: ${sudoAllLines}; Kerberos SSOe: ${kerberosSSOeResult}; Platform SSOe: ${platformSSOeResult}; Location Services: ${locationServicesStatus}; SSH: ${sshStatus}; Microsoft OneDrive Sync Date: ${oneDriveSyncDate}; Time Machine Backup Date: ${tmStatus} ${tmLastBackup}; Battery Cycle Count: ${batteryCycleCount}; Wi-Fi: ${ssid}; ${wiFiIpAddress}; VPN IP: ${globalProtectStatus}; ${networkTimeServer}; Jamf Pro ID: ${jamfProID}; Site: ${jamfProSiteName}"
+    notice "${localAdminWarning}User: ${loggedInUserFullname} (${loggedInUser}) [${loggedInUserID}] ${loggedInUserGroupMembership}; ${bootstrapTokenStatus}; sudo Check: ${sudoStatus}; sudoers: ${sudoAllLines}; Kerberos SSOe: ${kerberosSSOeResult}; Platform SSOe: ${platformSSOeResult}; Location Services: ${locationServicesStatus}; SSH: ${sshStatus}; Microsoft OneDrive Sync Date: ${oneDriveSyncDate}; Time Machine Backup Date: ${tmStatus} ${tmLastBackup}; Battery Cycle Count: ${batteryCycleCount}; Wi-Fi: ${ssid}; ${wiFiIpAddress}; VPN IP: ${globalProtectStatus}; ${networkTimeServer}; Jamf Pro Computer ID: ${jamfProID}; Site: ${jamfProSiteName}"
 
     if [[ -n "${overallHealth}" ]]; then
         dialogUpdate "icon: SF=xmark.circle.fill,weight=bold,colour1=#BB1717,colour2=#F31F1F"
@@ -686,7 +712,9 @@ function quitScript() {
     rm -rf "${dialogJSONFile}"
 
     # Remove overlay icon
-    rm -rf "${overlayicon}"
+    if [[ -f "${overlayicon}" ]] && [[ "${overlayicon}" != "/System/Library/CoreServices/Finder.app" ]]; then
+        rm -rf "${overlayicon}"
+    fi
 
     # Remove default dialog.log
     rm -rf /var/tmp/dialog.log
@@ -1163,16 +1191,20 @@ function checkFirewall() {
 
     sleep "${anticipationDuration}"
 
-    firewallCheck=$( /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate )
+    if [[ "$organizationFirewall" == "socketfilterfw" ]]; then
+        firewallCheck=$( /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate )
+    elif [[ "$organizationFirewall" == "pf" ]]; then
+        firewallCheck=$( /sbin/pfctl -s info )
+    fi
 
     case ${firewallCheck} in
 
-        *"enabled"* ) 
+        *"enabled"* | *"Enabled"* | *"is blocking"* ) 
             dialogUpdate "listitem: index: ${1}, status: success, statustext: Enabled"
             info "${humanReadableCheckName}: Enabled"
             ;;
 
-        *  )
+        * )
             dialogUpdate "listitem: index: ${1}, status: fail, statustext: Failed"
             errorOut "${humanReadableCheckName}: Failed"
             overallHealth+="${humanReadableCheckName}; "
@@ -1273,7 +1305,7 @@ function checkFreeDiskSpace() {
 
     diskMessage="${humanReadableCheckName}: ${diskSpace}"
 
-    if [[ "${freePercentage}" < "${allowedMinimumFreeDiskPercentage}" ]]; then
+    if (( $(echo ${freePercentage}'<'${allowedMinimumFreeDiskPercentage} |bc -l) )); then
 
         dialogUpdate "listitem: index: ${1}, status: fail, statustext: ${diskSpace}"
         errorOut "${humanReadableCheckName}: ${diskSpace}"
