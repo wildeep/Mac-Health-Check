@@ -96,7 +96,7 @@ The following health checks and information reporting are included and the scrip
 - Wi-FI IP Address
 - VPN IP Address
 
-#### Jamf Pro Information***
+#### Jamf Pro Information**
 - Site
 
 ***[Payload Variables for Configuration Profiles](https://learn.jamf.com/en-US/bundle/jamf-pro-documentation-11.18.0/page/Computer_Configuration_Profiles.html#ariaid-title2)
@@ -104,20 +104,24 @@ The following health checks and information reporting are included and the scrip
 ### Policy Log Reporting
 
 ```
-MHC (2.0.0): 2025-07-19 03:43:13 - [NOTICE] WARNING: 'localadmin' IS A MEMBER OF 'admin';
+MHC (2.1.0): 2025-07-24 03:43:13 - [NOTICE] WARNING: 'localadmin' IS A MEMBER OF 'admin';
 User: macOS Server Administrator (localadmin) [503] staff everyone localaccounts _appserverusr 
-admin _appserveradm com.apple.sharepoint.group.4 com.apple.sharepoint.group.3 com.apple.sharepoint.group.1 _appstore
-_lpadmin _lpoperator _developer _analyticsusers com.apple.access_ftp com.apple.access_screensharing
-com.apple.access_ssh com.apple.access_remote_ae com.apple.sharepoint.group.2; sudo Check: /etc/sudoers: parsed OK;
-sudoers: root  ALL = (ALL) ALL %admin  ALL = (ALL) ALL ; Platform SSOe: localadmin NOT logged in; Location Services: Enabled;
-SSH: On; Microsoft OneDrive Sync Date: Not Configured; Time Machine Backup Date: Not configured ; Battery Cycle Count: 0;
-Wi-Fi: Liahona; Ethernet IP address: 17.113.201.250; VPN IP: 17.113.201.250; Network Time Server: time.apple.com;
-Jamf Pro ID: 007; Site: Servers
+admin _appserveradm com.apple.sharepoint.group.4 com.apple.sharepoint.group.3
+com.apple.sharepoint.group.1 _appstore _lpadmin _lpoperator _developer _analyticsusers
+com.apple.access_ftp com.apple.access_screensharing com.apple.access_ssh com.apple.access_remote_ae
+com.apple.sharepoint.group.2; Bootstrap Token supported on server: YES;
+Bootstrap Token escrowed to server: YES; sudo Check: /etc/sudoers: parsed OK;
+sudoers: root  ALL = (ALL) ALL %admin  ALL = (ALL) ALL ; Platform SSOe: localadmin NOT logged in;
+Location Services: Enabled; SSH: On; Microsoft OneDrive Sync Date: Not Configured;
+Time Machine Backup Date: Not configured ; Battery Cycle Count: 0; Wi-Fi: Liahona;
+Ethernet IP address: 17.113.201.250; VPN IP: 17.113.201.250; Network Time Server: time.apple.com;
+Jamf Pro Computer ID: 007; Site: Servers
 ```
 
 1. Warning when logged-in user is a member of `admin`
 1. Deferred Software Updates
 1. Logged-In User Group Membership
+1. Bootstrap Token
 1. sudoers
 1. Kerberos SSOe
 1. Location Services
@@ -125,7 +129,7 @@ Jamf Pro ID: 007; Site: Servers
 1. Time Machine
 1. Battery Cycle Count
 1. Network Time Server
-1. Jamf Pro ID
+1. Jamf Pro Computer ID
 
 ## Support
 

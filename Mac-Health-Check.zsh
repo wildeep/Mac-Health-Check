@@ -3,11 +3,12 @@
 
 ####################################################################################################
 #
-# Name: Mac Health Check
+# Mac Health Check
 #
-# Purpose: Provides users a "heads-up display" of critical computer health information via swiftDialog
+# A practical and user-friendly approach to surfacing Mac compliance information directly to end-users
+# via Jamf Pro Self Service
 #
-# Information: https://snelson.us/mhc
+# https://snelson.us/mhc
 #
 # Inspired by:
 #   - @talkingmoose and @robjschroeder
@@ -16,7 +17,7 @@
 #
 # HISTORY
 #
-# Version 3.0.0, 23-Jul-2025, Dan K. Snelson (@dan-snelson)
+# Version 3.0.0, 24-Jul-2025, Dan K. Snelson (@dan-snelson)
 #   - First (attempt at a) MDM-agnostic release
 #
 ####################################################################################################
@@ -32,7 +33,7 @@
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin/
 
 # Script Version
-scriptVersion="3.0.0b4"
+scriptVersion="3.0.0b5"
 
 # Client-side Log
 scriptLog="/var/log/org.churchofjesuschrist.log"
@@ -70,7 +71,7 @@ organizationColorScheme="weight=semibold,colour1=#ef9d51,colour2=#ef7951"
 # Organization's Kerberos Realm (leave blank to disable check)
 kerberosRealm=""
 
-# Organization's Firewall Type [socketfilterfw | pf]
+# Organization's Firewall Type [ socketfilterfw | pf ]
 organizationFirewall="socketfilterfw"
 
 # "Anticipation" Duration (in seconds)
@@ -165,7 +166,7 @@ fi
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Operating System Variables
+# Computer Variables
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 osVersion=$( sw_vers -productVersion )
@@ -178,6 +179,7 @@ computerName=$( scutil --get ComputerName | /usr/bin/sed 's/’//' )
 computerModel=$( sysctl -n hw.model )
 localHostName=$( scutil --get LocalHostName )
 batteryCycleCount=$( ioreg -r -c "AppleSmartBattery" | /usr/bin/grep '"CycleCount" = ' | /usr/bin/awk '{ print $3 }' | /usr/bin/sed s/\"//g )
+bootstrapTokenStatus=$( profiles status -type bootstraptoken | awk '{sub(/^profiles: /, ""); printf "%s", $0; if (NR < 2) printf "; "}' | sed 's/; $//' )
 ssid=$( system_profiler SPAirPortDataType | awk '/Current Network Information:/ { getline; print substr($0, 13, (length($0) - 13)); exit }' )
 sshStatus=$( systemsetup -getremotelogin | awk -F ": " '{ print $2 }' )
 networkTimeServer=$( systemsetup -getnetworktimeserver )
@@ -803,7 +805,7 @@ function quitScript() {
 
     quitOut "Exiting …"
 
-    notice "${localAdminWarning}User: ${loggedInUserFullname} (${loggedInUser}) [${loggedInUserID}] ${loggedInUserGroupMembership}; sudo Check: ${sudoStatus}; sudoers: ${sudoAllLines}; Kerberos SSOe: ${kerberosSSOeResult}; Platform SSOe: ${platformSSOeResult}; Location Services: ${locationServicesStatus}; SSH: ${sshStatus}; Microsoft OneDrive Sync Date: ${oneDriveSyncDate}; Time Machine Backup Date: ${tmStatus} ${tmLastBackup}; Battery Cycle Count: ${batteryCycleCount}; Wi-Fi: ${ssid}; ${wiFiIpAddress}; VPN IP: ${globalProtectStatus}; ${networkTimeServer}; Jamf Pro ID: ${jamfProID}; Site: ${jamfProSiteName}"
+    notice "${localAdminWarning}User: ${loggedInUserFullname} (${loggedInUser}) [${loggedInUserID}] ${loggedInUserGroupMembership}; ${bootstrapTokenStatus}; sudo Check: ${sudoStatus}; sudoers: ${sudoAllLines}; Kerberos SSOe: ${kerberosSSOeResult}; Platform SSOe: ${platformSSOeResult}; Location Services: ${locationServicesStatus}; SSH: ${sshStatus}; Microsoft OneDrive Sync Date: ${oneDriveSyncDate}; Time Machine Backup Date: ${tmStatus} ${tmLastBackup}; Battery Cycle Count: ${batteryCycleCount}; Wi-Fi: ${ssid}; ${wiFiIpAddress}; VPN IP: ${globalProtectStatus}; ${networkTimeServer}; Jamf Pro Computer ID: ${jamfProID}; Site: ${jamfProSiteName}"
 
     if [[ -n "${overallHealth}" ]]; then
         dialogUpdate "icon: SF=xmark.circle.fill,weight=bold,colour1=#BB1717,colour2=#F31F1F"
@@ -1435,7 +1437,7 @@ function checkFreeDiskSpace() {
 
     diskMessage="${humanReadableCheckName}: ${diskSpace}"
 
-    if [[ "${freePercentage}" < "${allowedMinimumFreeDiskPercentage}" ]]; then
+    if (( $(echo ${freePercentage}'<'${allowedMinimumFreeDiskPercentage} |bc -l) )); then
 
         dialogUpdate "listitem: index: ${1}, status: fail, statustext: ${diskSpace}"
         errorOut "${humanReadableCheckName}: ${diskSpace}"
