@@ -115,7 +115,7 @@ sudoers: root  ALL = (ALL) ALL %admin  ALL = (ALL) ALL ; Platform SSOe: localadm
 Location Services: Enabled; SSH: On; Microsoft OneDrive Sync Date: Not Configured;
 Time Machine Backup Date: Not configured ; Battery Cycle Count: 0; Wi-Fi: Liahona;
 Ethernet IP address: 17.113.201.250; VPN IP: 17.113.201.250; Network Time Server: time.apple.com;
-Jamf Pro ID: 007; Site: Servers
+Jamf Pro Computer ID: 007; Site: Servers
 ```
 
 1. Warning when logged-in user is a member of `admin`
@@ -129,7 +129,7 @@ Jamf Pro ID: 007; Site: Servers
 1. Time Machine
 1. Battery Cycle Count
 1. Network Time Server
-1. Jamf Pro ID
+1. Jamf Pro Computer ID
 
 ## Support
 

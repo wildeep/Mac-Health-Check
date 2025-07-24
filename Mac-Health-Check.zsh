@@ -79,7 +79,7 @@ organizationColorScheme="weight=semibold,colour1=#ef9d51,colour2=#ef7951"
 # Organization's Kerberos Realm (leave blank to disable check)
 kerberosRealm=""
 
-# Organization's Firewall Type [socketfilterfw | pf]
+# Organization's Firewall Type [ socketfilterfw | pf ]
 organizationFirewall="socketfilterfw"
 
 # "Anticipation" Duration (in seconds)
