@@ -3,11 +3,12 @@
 
 ####################################################################################################
 #
-# Name: Mac Health Check
+# Mac Health Check
 #
-# Purpose: Provides users a "heads-up display" of critical computer health information via swiftDialog
+# A practical and user-friendly approach to surfacing Mac compliance information directly to end-users
+# via Jamf Pro Self Service
 #
-# Information: https://snelson.us/mhc
+# https://snelson.us/mhc
 #
 # Inspired by:
 #   - @talkingmoose and @robjschroeder
@@ -16,18 +17,7 @@
 #
 # HISTORY
 #
-# Version 2.0.0, 17-Jul-2025, Dan K. Snelson (@dan-snelson)
-#   - Renamed "Computer Compliance" to "Mac Health Check" (thanks, @uurazzle and @scriptingosx!)
-#
-# Version 2.1.0, 21-Jul-2025, Dan K. Snelson (@dan-snelson)
-#   - Added an `operationMode` of "debug" to specifically enable swiftDialog debugging
-#   - Improved error handling for malformed `plistFilepath` variables (Addresses Issue #2)
-#   - Updated overlayicon to be MDM-agnostic (Addresses Issue #3)
-#   - Added Secure Token status check to `helpmessage` (Addresses Issue #4)
-#   - Addition of Packet Firewall status check option (Pull Request #5; thanks, @HowardGMac!)
-#   - Updated MHC_icon.png
-#
-# Version 2.1.0, 23-Jul-2025, Dan K. Snelson (@dan-snelson)
+# Version 2.1.0, 24-Jul-2025, Dan K. Snelson (@dan-snelson)
 #   - Added an `operationMode` of "debug" to specifically enable swiftDialog debugging
 #   - Improved error handling for malformed `plistFilepath` variables (Addresses Issue #2)
 #   - Updated overlayicon to be MDM-agnostic (Addresses Issue #3)
@@ -35,6 +25,8 @@
 #   - Addition of Packet Firewall status check option (Pull Request #5; thanks, @HowardGMac!)
 #   - Updated MHC_icon.png
 #   - Update Firewall Cases to include one for State 2 (Pull Request #8; thanks, @mam5hs!)
+#   - Fix for Free Disk Space comparison bug (Addresses Issue #10). (Pull Request #11; thanks again, @HowardGMac!)
+#   - Added bootstrap token status
 #
 ####################################################################################################
 
@@ -49,7 +41,7 @@
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin/
 
 # Script Version
-scriptVersion="2.1.0b4"
+scriptVersion="2.1.0"
 
 # Client-side Log
 scriptLog="/var/log/org.churchofjesuschrist.log"
@@ -140,7 +132,7 @@ fi
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Operating System Variables
+# Computer Variables
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 osVersion=$( sw_vers -productVersion )
@@ -153,6 +145,7 @@ computerName=$( scutil --get ComputerName | /usr/bin/sed 's/’//' )
 computerModel=$( sysctl -n hw.model )
 localHostName=$( scutil --get LocalHostName )
 batteryCycleCount=$( ioreg -r -c "AppleSmartBattery" | /usr/bin/grep '"CycleCount" = ' | /usr/bin/awk '{ print $3 }' | /usr/bin/sed s/\"//g )
+bootstrapTokenStatus=$( profiles status -type bootstraptoken | awk '{sub(/^profiles: /, ""); printf "%s", $0; if (NR < 2) printf "; "}' | sed 's/; $//' )
 ssid=$( system_profiler SPAirPortDataType | awk '/Current Network Information:/ { getline; print substr($0, 13, (length($0) - 13)); exit }' )
 sshStatus=$( systemsetup -getremotelogin | awk -F ": " '{ print $2 }' )
 networkTimeServer=$( systemsetup -getnetworktimeserver )
@@ -674,7 +667,7 @@ function quitScript() {
 
     quitOut "Exiting …"
 
-    notice "${localAdminWarning}User: ${loggedInUserFullname} (${loggedInUser}) [${loggedInUserID}] ${loggedInUserGroupMembership}; sudo Check: ${sudoStatus}; sudoers: ${sudoAllLines}; Kerberos SSOe: ${kerberosSSOeResult}; Platform SSOe: ${platformSSOeResult}; Location Services: ${locationServicesStatus}; SSH: ${sshStatus}; Microsoft OneDrive Sync Date: ${oneDriveSyncDate}; Time Machine Backup Date: ${tmStatus} ${tmLastBackup}; Battery Cycle Count: ${batteryCycleCount}; Wi-Fi: ${ssid}; ${wiFiIpAddress}; VPN IP: ${globalProtectStatus}; ${networkTimeServer}; Jamf Pro ID: ${jamfProID}; Site: ${jamfProSiteName}"
+    notice "${localAdminWarning}User: ${loggedInUserFullname} (${loggedInUser}) [${loggedInUserID}] ${loggedInUserGroupMembership}; ${bootstrapTokenStatus}; sudo Check: ${sudoStatus}; sudoers: ${sudoAllLines}; Kerberos SSOe: ${kerberosSSOeResult}; Platform SSOe: ${platformSSOeResult}; Location Services: ${locationServicesStatus}; SSH: ${sshStatus}; Microsoft OneDrive Sync Date: ${oneDriveSyncDate}; Time Machine Backup Date: ${tmStatus} ${tmLastBackup}; Battery Cycle Count: ${batteryCycleCount}; Wi-Fi: ${ssid}; ${wiFiIpAddress}; VPN IP: ${globalProtectStatus}; ${networkTimeServer}; Jamf Pro Computer ID: ${jamfProID}; Site: ${jamfProSiteName}"
 
     if [[ -n "${overallHealth}" ]]; then
         dialogUpdate "icon: SF=xmark.circle.fill,weight=bold,colour1=#BB1717,colour2=#F31F1F"
