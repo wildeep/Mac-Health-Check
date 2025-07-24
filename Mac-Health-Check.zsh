@@ -16,7 +16,7 @@
 #
 # HISTORY
 #
-# Version 3.0.0, 22-Jul-2025, Dan K. Snelson (@dan-snelson)
+# Version 3.0.0, 23-Jul-2025, Dan K. Snelson (@dan-snelson)
 #   - First (attempt at a) MDM-agnostic release
 #
 ####################################################################################################
@@ -32,7 +32,7 @@
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin/
 
 # Script Version
-scriptVersion="3.0.0b1"
+scriptVersion="3.0.0b4"
 
 # Client-side Log
 scriptLog="/var/log/org.churchofjesuschrist.log"
@@ -41,7 +41,7 @@ scriptLog="/var/log/org.churchofjesuschrist.log"
 SECONDS="0"
 
 # Paramter 4: Operation Mode [ test | debug | production ]
-operationMode="${4:-"production"}"
+operationMode="${4:-"debug"}"
 
     # Enable `set -x` if operation mode is "test" or "debug" to help identify variable initialization issues (i.e., SSID)
     [[ "${operationMode}" == "test" || "${operationMode}" == "debug" ]] && set -x
@@ -116,27 +116,28 @@ else
 fi
 
 case "${serverURL}" in
+
     *jamf* | *jss* )
-        # echo "MDM Vendor is Jamf"
         mdmVendor="Jamf Pro"
+        [[ -f "/private/var/log/jamf.log" ]] || { echo "jamf.log missing; exiting."; exit 1; }
         ;;
     
     *microsoft* )
-        # echo "MDM Vendor is Microsoft"
         mdmVendor="Microsoft Intune"
         ;;
 
     *jumpcloud* )
-        # echo "MDM Vendor is JumpCloud"
         mdmVendor="JumpCloud"
         ;;
+
     *mosyle* )
-        # echo "MDM Vendor is Mosyle"
         mdmVendor="Mosyle"
         ;;
+
     * )
         echo "Unable to determine MDM from ServerURL"
     ;;
+
 esac
 
 
@@ -533,6 +534,33 @@ if ! echo "$genericMdmListitemJSON" | jq . >/dev/null 2>&1; then
   exit 1
 fi
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Mosyle List Items
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+mosyleListitemJSON='
+[
+    {"title" : "macOS Version", "subtitle" : "Organizational standards are the current and immediately previous versions of macOS", "icon" : "SF=01.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Available Updates", "subtitle" : "Keep your Mac up-to-date to ensure its security and performance", "icon" : "SF=02.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "System Integrity Protection", "subtitle" : "System Integrity Protection (SIP) in macOS protects the entire system by preventing the execution of unauthorized code.", "icon" : "SF=03.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Firewall", "subtitle" : "The built-in macOS firewall helps protect your Mac from unauthorized access.", "icon" : "SF=04.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "FileVault Encryption", "subtitle" : "FileVault is built-in to macOS and provides full-disk encryption to help prevent unauthorized access to your Mac", "icon" : "SF=05.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Last Reboot", "subtitle" : "Restart your Mac regularly — at least once a week — can help resolve many common issues", "icon" : "SF=06.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Free Disk Space", "subtitle" : "See KB0080685 Disk Usage to help identify the 50 largest directories", "icon" : "SF=07.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "MDM Profile", "subtitle" : "The presence of the Mosyle MDM profile helps ensure your Mac is enrolled", "icon" : "SF=08.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "MDM Certficate Expiration", "subtitle" : "Validate the expiration date of the Mosyle MDM certficate", "icon" : "SF=09.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Apple Push Notification service", "subtitle" : "Validate communication between Apple, Mosyle and your Mac", "icon" : "SF=10.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Mosyle Check-In", "subtitle" : "Your Mac should check-in with the Mosyle MDM server multiple times each day", "icon" : "SF=11.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Network Quality Test", "subtitle" : "Various networking-related tests of your Mac’s Internet connection", "icon" : "SF=12.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"}
+]
+'
+
+# Validate mosyleListitemJSON is valid JSON
+if ! echo "$mosyleListitemJSON" | jq . >/dev/null 2>&1; then
+  echo "Error: mosyletitemJSON is invalid JSON"
+  echo "$mosyleListitemJSON"
+  exit 1
+fi
 
 
 ####################################################################################################
@@ -708,7 +736,7 @@ EOF
                                         "items": [
                                             {
                                                 "type": "Image",
-                                                "url": "https://usw2.ics.services.jamfcloud.com/icon/hash_277f145cfd2855478f571a36a5c51798e1771a372054d84202d857295db5b345",
+                                                "url": "https://usw2.ics.services.jamfcloud.com/icon/hash_38a7af6b0231e76e3f4842ee3c8a18fb8b1642750f6a77385eff96707124e1fb",
                                                 "altText": "Mac Health Check",
                                                 "size": "Small"
                                             }
@@ -915,7 +943,7 @@ fi
 # Pre-flight Check: Logging Preamble
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-preFlight "\n\n###\n# $humanReadableScriptName (${scriptVersion})\n# https://snelson.us/mhc\n###\n"
+preFlight "\n\n###\n# $humanReadableScriptName (${scriptVersion})\n#MDM Vendor: ${mdmVendor}\n#\n# https://snelson.us/mhc\n###\n"
 preFlight "Initiating …"
 
 
@@ -936,16 +964,6 @@ preFlight "${loggedInUserFullname} (${loggedInUser}) [${loggedInUserID}]"
 if [[ $(id -u) -ne 0 ]]; then
     fatal "This script must be run as root; exiting."
 fi
-
-
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Pre-flight Check: Confirm jamf.log exists
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
-# if [[ ! -f "/private/var/log/jamf.log" ]]; then
-#     fatal "jamf.log missing; exiting."
-# fi
 
 
 
@@ -1338,12 +1356,12 @@ function checkFirewall() {
 
     case ${firewallCheck} in
 
-        *"enabled"* | *"Enabled"* )
+        *"enabled"* | *"Enabled"* | *"is blocking"* ) 
             dialogUpdate "listitem: index: ${1}, status: success, statustext: Enabled"
             info "${humanReadableCheckName}: Enabled"
             ;;
 
-        *  )
+        * )
             dialogUpdate "listitem: index: ${1}, status: fail, statustext: Failed"
             errorOut "${humanReadableCheckName}: Failed"
             overallHealth+="${humanReadableCheckName}; "
@@ -1494,6 +1512,38 @@ function checkJamfProMdmProfile() {
 
 }
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Check the status of the Mosyle MDM Profile
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+function checkMosyleMdmProfile() {
+
+    local humanReadableCheckName="Mosyle MDM Profile"
+    notice "Check ${humanReadableCheckName} …"
+
+    dialogUpdate "icon: SF=gear.badge,${organizationColorScheme}"
+    dialogUpdate "listitem: index: ${1}, status: wait, statustext: Checking …"
+    dialogUpdate "progress: increment"
+    dialogUpdate "progresstext: Determining ${humanReadableCheckName} status …"
+
+    sleep "${anticipationDuration}"
+
+    mdmProfileTest=$( profiles show enrollment | grep "00000000-0000-0000-A000-4A414D460003" )
+
+    if [[ -n "${mdmProfileTest}" ]]; then
+
+        dialogUpdate "listitem: index: ${1}, status: success, statustext: Installed"
+        info "${humanReadableCheckName}: Installed"
+
+    else
+
+        dialogUpdate "listitem: index: ${1}, status: fail, statustext: NOT Installed"
+        errorOut "${humanReadableCheckName} (${1})"
+        overallHealth+="${humanReadableCheckName}; "
+
+    fi
+
+}
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -1700,7 +1750,114 @@ function checkJamfProInventory() {
 
 }
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Check the expiration date of the Mosyle Built-in Certificate Authority 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+function checkMosyleCertificateExpiration() {
+
+    local humanReadableCheckName="Mosyle Built-in Certificate Authority"
+    notice "Check the expiration date of the ${humanReadableCheckName} …"
+
+    dialogUpdate "icon: SF=mail.and.text.magnifyingglass,${organizationColorScheme}"
+    dialogUpdate "listitem: index: ${1}, status: wait, statustext: Checking …"
+    dialogUpdate "progress: increment"
+    dialogUpdate "progresstext: Determining MDM Certificate expiration date …"
+
+    sleep "${anticipationDuration}"
+
+    identities=( $( security find-identity -v /Library/Keychains/System.keychain | awk '{print $3}' | tr -d '"' | head -n 1 ) )
+    now_seconds=$( date +%s )
+
+    if [[ "${identities}" != "identities" ]]; then
+
+        for i in $identities; do
+            if [[ $(security find-certificate -c "$i" | grep issu | tr -d '"') == *"MOSYLE CORPORATION"* ]] || [[ $(security find-certificate -c "$i" | grep issu | tr -d '"') == *"MOSYLE CORPORATION"* ]]; then
+                expiry=$(security find-certificate -c "$i" -p | openssl x509 -noout -enddate | cut -f2 -d"=")
+                expirationDateFormatted=$( date -j -f "%b %d %H:%M:%S %Y GMT" "${expiry}" "+%d-%b-%Y" )
+                date_seconds=$(date -j -f "%b %d %T %Y %Z" "$expiry" +%s)
+                if (( date_seconds > now_seconds )); then
+                    dialogUpdate "listitem: index: ${1}, status: success, statustext: ${expirationDateFormatted}"
+                    info "${humanReadableCheckName} Expiration: ${expirationDateFormatted}"
+                else
+                    dialogUpdate "listitem: index: ${1}, status: fail, statustext: ${expirationDateFormatted}"
+                    errorOut "${humanReadableCheckName} Expiration: ${expirationDateFormatted}"
+                    overallHealth+="${humanReadableCheckName}; "
+                fi
+            fi
+        done
+    
+    else
+
+        expirationDateFormatted="NOT Installed"
+        dialogUpdate "listitem: index: ${1}, status: fail, statustext: ${expirationDateFormatted}"
+        errorOut "${humanReadableCheckName} Expiration: ${expirationDateFormatted}"
+        overallHealth+="${humanReadableCheckName}; "
+
+    fi
+
+}
+
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Check Last Mosyle Check-In 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+function checkMosyleCheckIn() {
+
+    local humanReadableCheckName="Last Mosyle check-in"
+    notice "Checking ${humanReadableCheckName} …"
+
+    dialogUpdate "icon: SF=dot.radiowaves.left.and.right,${organizationColorScheme}"
+    dialogUpdate "listitem: index: ${1}, status: wait, statustext: Checking …"
+    dialogUpdate "progress: increment"
+    dialogUpdate "progresstext: Determining ${humanReadableCheckName} …"
+
+    sleep "${anticipationDuration}"
+
+    # Enable 24 hour clock format (12 hour clock enabled by default)
+    twenty_four_hour_format="false"
+
+    # Number of seconds since action last occurred (86400 = 1 day)
+    check_in_time_old=86400      # 1 day
+    check_in_time_aging=28800    # 8 hours
+
+    #last_check_in_time=$(grep "Checking for policies triggered by \"recurring check-in\"" "/private/var/log/jamf.log" | tail -n 1 | awk '{ print $2,$3,$4 }')
+	last_check_in_time=$(defaults read com.mosyle.macos.manager.mdm MacCommandsReplyResultsSuccessDate | cut -d. -f1)
+
+    # Convert last Mosyle check-in time to epoch
+    last_check_in_time_epoch=$last_check_in_time
+    currentTimeEpoch=$(date +%s)
+    time_since_check_in_epoch=$(($currentTimeEpoch-$last_check_in_time_epoch))
+
+    # Convert last Mosyle epoch to something easier to read
+    if [[ "${twenty_four_hour_format}" == "true" ]]; then
+        # Outputs 24 hour clock format
+        last_check_in_time_human_reable=$(date -r "${last_check_in_time_epoch}" "+%A %H:%M")
+    else
+        # Outputs 12 hour clock format
+        last_check_in_time_human_reable=$(date -r "${last_check_in_time_epoch}" "+%A %-l:%M %p")
+    fi
+
+    # Set status indicator for last check-in
+    if [ ${time_since_check_in_epoch} -ge ${check_in_time_old} ]; then
+        # check_in_status_indicator="🔴"
+        dialogUpdate "listitem: index: ${1}, status: fail, statustext: ${last_check_in_time_human_reable}"
+        errorOut "${humanReadableCheckName}: ${last_check_in_time_human_reable}"
+        overallHealth+="${humanReadableCheckName}; "
+    elif [ ${time_since_check_in_epoch} -ge ${check_in_time_aging} ]; then
+        # check_in_status_indicator="🟠"
+        dialogUpdate "listitem: index: ${1}, status: error, statustext: ${last_check_in_time_human_reable}"
+        warning "${humanReadableCheckName}: ${last_check_in_time_human_reable}"
+        overallHealth+="${humanReadableCheckName}; "
+    elif [ ${time_since_check_in_epoch} -lt ${check_in_time_aging} ]; then
+        # check_in_status_indicator="🟢"
+        dialogUpdate "listitem: index: ${1}, status: success, statustext: ${last_check_in_time_human_reable}"
+        info "${humanReadableCheckName}: ${last_check_in_time_human_reable}"
+    fi
+
+}
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Check FileVault
@@ -1920,6 +2077,10 @@ case ${mdmVendor} in
         combinedJSON=$(jq -n --argjson dialog "$mainDialogJSON" --argjson listitems "$jamfProListitemJSON" '$dialog + { "listitem": $listitems }')
         ;;
 
+    "Mosyle" )
+        combinedJSON=$(jq -n --argjson dialog "$mainDialogJSON" --argjson listitems "$mosyleListitemJSON" '$dialog + { "listitem": $listitems }')
+        ;;
+
     * )
         warning "Unknown MDM vendor: ${mdmVendor}"
         combinedJSON=$(jq -n --argjson dialog "$mainDialogJSON" --argjson listitems "$genericMdmListitemJSON" '$dialog + { "listitem": $listitems }')
@@ -1980,6 +2141,22 @@ if [[ "${operationMode}" == "production" ]]; then
             updateComputerInventory "17"
             ;;
 
+        "Mosyle" )
+            checkOS "0"
+            checkAvailableSoftwareUpdates "1"
+            checkSIP "2"
+            checkFirewall "3"
+            checkFileVault "4"
+            checkUptime "5"
+            checkFreeDiskSpace "6"
+            checkMosyleMdmProfile "7"
+            checkMosyleCertificateExpiration "8"
+            checkAPNs "9"
+            checkMosyleCheckIn "10"
+            checkNetworkQuality "11"
+            ;;
+
+
         * )
             checkOS "0"
             checkAvailableSoftwareUpdates "1"
@@ -2001,9 +2178,9 @@ else
 
     # Non-production Mode
 
-    dialogUpdate "title: ${humanReadableScriptName} (${scriptVersion}) [Operation Mode: ${operationMode}]"
+    dialogUpdate "title: ${humanReadableScriptName} (${scriptVersion}) [ MDM Vendor: ${mdmVendor} | Operation Mode: ${operationMode} ]"
 
-    listitemLength=$(get_json_value "${dialogJSON}" "listitem.length")
+    listitemLength=$(get_json_value "${combinedJSON}" "listitem.length")
 
     for (( i=0; i<listitemLength; i++ )); do
 
