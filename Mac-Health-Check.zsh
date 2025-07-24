@@ -33,7 +33,7 @@
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin/
 
 # Script Version
-scriptVersion="3.0.0b6"
+scriptVersion="3.0.0b7"
 
 # Client-side Log
 scriptLog="/var/log/org.churchofjesuschrist.log"
@@ -100,8 +100,9 @@ excessiveUptimeAlertStyle="warning"
 completionTimer="60"
 
 # Organization's MDM Profile UUID
-# You can find this out by using: sudo profiles show enrollment
+# You can find this out by using: `sudo profiles show enrollment`
 organizationMDMuuid="00000000-0000-0000-A000-4A414D460003"
+
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -1442,45 +1443,12 @@ function checkFreeDiskSpace() {
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Check the status of the Jamf Pro MDM Profile
+# Check the status of the MDM Profile
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-function checkJamfProMdmProfile() {
+function checkMdmProfile() {
 
-    local humanReadableCheckName="Jamf Pro MDM Profile"
-    notice "Check ${humanReadableCheckName} …"
-
-    dialogUpdate "icon: SF=gear.badge,${organizationColorScheme}"
-    dialogUpdate "listitem: index: ${1}, status: wait, statustext: Checking …"
-    dialogUpdate "progress: increment"
-    dialogUpdate "progresstext: Determining ${humanReadableCheckName} status …"
-
-    sleep "${anticipationDuration}"
-
-    mdmProfileTest=$( profiles list -all | grep $organizationMDMuuid )
-
-    if [[ -n "${mdmProfileTest}" ]]; then
-
-        dialogUpdate "listitem: index: ${1}, status: success, statustext: Installed"
-        info "${humanReadableCheckName}: Installed"
-
-    else
-
-        dialogUpdate "listitem: index: ${1}, status: fail, statustext: NOT Installed"
-        errorOut "${humanReadableCheckName} (${1})"
-        overallHealth+="${humanReadableCheckName}; "
-
-    fi
-
-}
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Check the status of the Mosyle MDM Profile
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
-function checkMosyleMdmProfile() {
-
-    local humanReadableCheckName="Mosyle MDM Profile"
+    local humanReadableCheckName="${mdmVendor} MDM Profile"
     notice "Check ${humanReadableCheckName} …"
 
     dialogUpdate "icon: SF=gear.badge,${organizationColorScheme}"
@@ -2093,7 +2061,7 @@ if [[ "${operationMode}" == "production" ]]; then
             checkFileVault "4"
             checkUptime "5"
             checkFreeDiskSpace "6"
-            checkJamfProMdmProfile "7"
+            checkMdmProfile "7"
             checkJssCertificateExpiration "8"
             checkAPNs "9"
             checkJamfProCheckIn "10"
@@ -2114,7 +2082,7 @@ if [[ "${operationMode}" == "production" ]]; then
             checkFileVault "4"
             checkUptime "5"
             checkFreeDiskSpace "6"
-            checkMosyleMdmProfile "7"
+            checkMdmProfile "7"
             checkMosyleCertificateExpiration "8"
             checkAPNs "9"
             checkMosyleCheckIn "10"
