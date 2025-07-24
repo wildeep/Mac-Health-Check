@@ -134,6 +134,10 @@ case "${serverURL}" in
         mdmVendor="Mosyle"
         ;;
 
+    *addigy* )
+        mdmVendor="Addigy"
+        ;;
+
     * )
         echo "Unable to determine MDM from ServerURL"
     ;;
