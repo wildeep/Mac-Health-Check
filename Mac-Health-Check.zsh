@@ -118,30 +118,30 @@ fi
 
 case "${serverURL}" in
 
+    *addigy* )
+        mdmVendor="Addigy"
+        ;;
+
     *jamf* | *jss* )
         mdmVendor="Jamf Pro"
         [[ -f "/private/var/log/jamf.log" ]] || { echo "jamf.log missing; exiting."; exit 1; }
+        ;;
+
+    *jumpcloud* )
+        mdmVendor="JumpCloud"
         ;;
     
     *microsoft* )
         mdmVendor="Microsoft Intune"
         ;;
 
-    *jumpcloud* )
-        mdmVendor="JumpCloud"
-        ;;
-
     *mosyle* )
         mdmVendor="Mosyle"
         ;;
 
-    *addigy* )
-        mdmVendor="Addigy"
-        ;;
-
     * )
         echo "Unable to determine MDM from ServerURL"
-    ;;
+        ;;
 
 esac
 
@@ -393,56 +393,6 @@ helpimage="qr=${infobuttonaction}"
 # Main Dialog Window
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# dialogJSON='
-# {
-#     "commandfile" : "'"${dialogCommandFile}"'",
-#     "ontop" : true,
-#     "moveable" : true,
-#     "windowbuttons" : "min",
-#     "quitkey" : "k",
-#     "title" : "'"${humanReadableScriptName} (${scriptVersion})"'",
-#     "icon" : "'"${icon}"'",
-#     "overlayicon" : "'"${overlayicon}"'",
-#     "message" : "none",
-#     "iconsize" : "198.0",
-#     "infobox" : "**User:** '"{userfullname}"'<br><br>**Computer Model:** '"{computermodel}"'<br><br>**Serial Number:** '"{serialnumber}"' ",
-#     "infobuttontext" : "'"${supportKB}"'",
-#     "infobuttonaction" : "'"${infobuttonaction}"'",
-#     "button1text" : "Wait",
-#     "button1disabled" : "true",
-#     "helpmessage" : "'"${helpmessage}"'",
-#     "helpimage" : "'"${helpimage}"'",
-#     "position" : "center",
-#     "progress" :  "'"${progressSteps}"'",
-#     "progresstext" : "Please wait …",
-#     "height" : "750",
-#     "width" : "900",
-#     "messagefont" : "size=14",
-#     "titlefont" : "shadow=true, size=24",
-#     "listitem" : [
-#         {"title" : "macOS Version", "subtitle" : "Organizational standards are the current and immediately previous versions of macOS", "icon" : "SF=01.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-#         {"title" : "Available Updates", "subtitle" : "Keep your Mac up-to-date to ensure its security and performance", "icon" : "SF=02.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-#         {"title" : "System Integrity Protection", "subtitle" : "System Integrity Protection (SIP) in macOS protects the entire system by preventing the execution of unauthorized code.", "icon" : "SF=03.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-#         {"title" : "Firewall", "subtitle" : "The built-in macOS firewall helps protect your Mac from unauthorized access.", "icon" : "SF=04.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-#         {"title" : "FileVault Encryption", "subtitle" : "FileVault is built-in to macOS and provides full-disk encryption to help prevent unauthorized access to your Mac", "icon" : "SF=05.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-#         {"title" : "Last Reboot", "subtitle" : "Restart your Mac regularly — at least once a week — can help resolve many common issues", "icon" : "SF=06.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-#         {"title" : "Free Disk Space", "subtitle" : "See KB0080685 Disk Usage to help identify the 50 largest directories", "icon" : "SF=07.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-#         {"title" : "MDM Profile", "subtitle" : "The presence of the Jamf Pro MDM profile helps ensure your Mac is enrolled", "icon" : "SF=08.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-#         {"title" : "MDM Certficate Expiration", "subtitle" : "Validate the expiration date of the Jamf Pro MDM certficate", "icon" : "SF=09.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-#         {"title" : "Apple Push Notification service", "subtitle" : "Validate communication between Apple, Jamf Pro and your Mac", "icon" : "SF=10.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-#         {"title" : "Jamf Pro Check-In", "subtitle" : "Your Mac should check-in with the Jamf Pro MDM server multiple times each day", "icon" : "SF=11.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-#         {"title" : "Jamf Pro Inventory", "subtitle" : "Your Mac should submit its inventory to the Jamf Pro MDM server daily", "icon" : "SF=12.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-#         {"title" : "BeyondTrust Privilege Management", "subtitle" : "Privilege Management for Mac pairs powerful least-privilege management and application control", "icon" : "SF=13.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-#         {"title" : "Cisco Umbrella", "subtitle" : "Cisco Umbrella combines multiple security functions so you can extend data protection anywhere.", "icon" : "SF=14.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-#         {"title" : "CrowdStrike Falcon", "subtitle" : "Technology, intelligence, and expertise come together in CrowdStrike Falcon to deliver security that works.", "icon" : "SF=15.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-#         {"title" : "Palo Alto GlobalProtect", "subtitle" : "Virtual Private Network (VPN) connection to Church headquarters", "icon" : "SF=16.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-#         {"title" : "Network Quality Test", "subtitle" : "Various networking-related tests of your Mac’s Internet connection", "icon" : "SF=17.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-#         {"title" : "Computer Inventory", "subtitle" : "The listing of your Mac’s apps and settings", "icon" : "SF=18.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"}
-#     ]
-# }
-# '
-# echo "${dialogJSON}" > "${dialogJSONFile}"
-
 mainDialogJSON='
 {
     "commandfile" : "'"${dialogCommandFile}"'",
@@ -518,29 +468,6 @@ fi
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Generic MDM List Items
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
-genericMdmListitemJSON='
-[
-    {"title" : "macOS Version", "subtitle" : "Organizational standards are the current and immediately previous versions of macOS", "icon" : "SF=01.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Available Updates", "subtitle" : "Keep your Mac up-to-date to ensure its security and performance", "icon" : "SF=02.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "System Integrity Protection", "subtitle" : "System Integrity Protection (SIP) in macOS protects the entire system by preventing the execution of unauthorized code.", "icon" : "SF=03.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Firewall", "subtitle" : "The built-in macOS firewall helps protect your Mac from unauthorized access.", "icon" : "SF=04.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "FileVault Encryption", "subtitle" : "FileVault is built-in to macOS and provides full-disk encryption to help prevent unauthorized access to your Mac", "icon" : "SF=05.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Last Reboot", "subtitle" : "Restart your Mac regularly — at least once a week — can help resolve many common issues", "icon" : "SF=06.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Free Disk Space", "subtitle" : "See KB0080685 Disk Usage to help identify the 50 largest directories", "icon" : "SF=07.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Network Quality Test", "subtitle" : "Various networking-related tests of your Mac’s Internet connection", "icon" : "SF=08.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"}
-]
-'
-# Validate genericMdmListitemJSON is valid JSON
-if ! echo "$genericMdmListitemJSON" | jq . >/dev/null 2>&1; then
-  echo "Error: genericMdmListitemJSON is invalid JSON"
-  echo "$genericMdmListitemJSON"
-  exit 1
-fi
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Mosyle List Items
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -567,6 +494,32 @@ if ! echo "$mosyleListitemJSON" | jq . >/dev/null 2>&1; then
   echo "$mosyleListitemJSON"
   exit 1
 fi
+
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Generic MDM List Items
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+genericMdmListitemJSON='
+[
+    {"title" : "macOS Version", "subtitle" : "Organizational standards are the current and immediately previous versions of macOS", "icon" : "SF=01.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Available Updates", "subtitle" : "Keep your Mac up-to-date to ensure its security and performance", "icon" : "SF=02.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "System Integrity Protection", "subtitle" : "System Integrity Protection (SIP) in macOS protects the entire system by preventing the execution of unauthorized code.", "icon" : "SF=03.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Firewall", "subtitle" : "The built-in macOS firewall helps protect your Mac from unauthorized access.", "icon" : "SF=04.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "FileVault Encryption", "subtitle" : "FileVault is built-in to macOS and provides full-disk encryption to help prevent unauthorized access to your Mac", "icon" : "SF=05.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Last Reboot", "subtitle" : "Restart your Mac regularly — at least once a week — can help resolve many common issues", "icon" : "SF=06.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Free Disk Space", "subtitle" : "See KB0080685 Disk Usage to help identify the 50 largest directories", "icon" : "SF=07.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Network Quality Test", "subtitle" : "Various networking-related tests of your Mac’s Internet connection", "icon" : "SF=08.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"}
+]
+'
+# Validate genericMdmListitemJSON is valid JSON
+if ! echo "$genericMdmListitemJSON" | jq . >/dev/null 2>&1; then
+  echo "Error: genericMdmListitemJSON is invalid JSON"
+  echo "$genericMdmListitemJSON"
+  exit 1
+fi
+
 
 
 ####################################################################################################
@@ -1552,6 +1505,7 @@ function checkMosyleMdmProfile() {
 }
 
 
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Check Apple Push Notification service (thanks, @isaacatmann!)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -1865,6 +1819,8 @@ function checkMosyleCheckIn() {
 
 }
 
+
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Check FileVault
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -1920,10 +1876,10 @@ function checkFileVault() {
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Check External Validation (where Parameter 2 represents the Jamf Pro Policy Custom Trigger)
+# Check External Jamf Pro Validation (where Parameter 2 represents the Jamf Pro Policy Custom Trigger)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-function checkExternal() {
+function checkExternalJamfPro() {
 
     trigger="${2}"
     appPath="${3}"
@@ -2139,10 +2095,10 @@ if [[ "${operationMode}" == "production" ]]; then
             checkAPNs "9"
             checkJamfProCheckIn "10"
             checkJamfProInventory "11"
-            checkExternal "12" "symvBeyondTrustPMfM" "/Applications/PrivilegeManagement.app"
-            checkExternal "13" "symvCiscoUmbrella" "/Applications/Cisco/Cisco Secure Client.app"
-            checkExternal "14" "symvCrowdStrikeFalcon" "/Applications/Falcon.app"
-            checkExternal "15" "symvGlobalProtect" "/Applications/GlobalProtect.app"
+            checkExternalJamfPro "12" "symvBeyondTrustPMfM" "/Applications/PrivilegeManagement.app"
+            checkExternalJamfPro "13" "symvCiscoUmbrella" "/Applications/Cisco/Cisco Secure Client.app"
+            checkExternalJamfPro "14" "symvCrowdStrikeFalcon" "/Applications/Falcon.app"
+            checkExternalJamfPro "15" "symvGlobalProtect" "/Applications/GlobalProtect.app"
             checkNetworkQuality "16"
             updateComputerInventory "17"
             ;;
