@@ -99,6 +99,9 @@ excessiveUptimeAlertStyle="warning"
 # Completion Timer (in seconds)
 completionTimer="60"
 
+# Organization's MDM Profile UUID
+# You can find this out by using: sudo profiles show enrollment
+organizationMDMuuid="00000000-0000-0000-A000-4A414D460003"
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -1454,7 +1457,7 @@ function checkJamfProMdmProfile() {
 
     sleep "${anticipationDuration}"
 
-    mdmProfileTest=$( profiles list -all | grep "00000000-0000-0000-A000-4A414D460003" )
+    mdmProfileTest=$( profiles list -all | grep $organizationMDMuuid )
 
     if [[ -n "${mdmProfileTest}" ]]; then
 
@@ -1487,7 +1490,7 @@ function checkMosyleMdmProfile() {
 
     sleep "${anticipationDuration}"
 
-    mdmProfileTest=$( profiles show enrollment | grep "00000000-0000-0000-A000-4A414D460003" )
+    mdmProfileTest=$( profiles show enrollment | grep $organizationMDMuuid )
 
     if [[ -n "${mdmProfileTest}" ]]; then
 
