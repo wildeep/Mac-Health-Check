@@ -2,6 +2,9 @@
 
 ## CHANGELOG
 
+### 2.2.0 (25-Jul-2025)
+- 
+
 ### 2.1.0 (24-Jul-2025)
 - Added an `operationMode` of "debug" to specifically enable swiftDialog debugging
 - Improved error handling for malformed `plistFilepath` variables (Addresses Issue #2)
