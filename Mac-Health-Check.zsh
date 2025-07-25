@@ -19,6 +19,7 @@
 #
 # Version 2.2.0, 25-Jul-2025, Dan K. Snelson (@dan-snelson)
 #   - Improved the GlobalProtect VPN IP detection logic
+#   - Added an option to show if an app is installed (Feature Request #18; thanks, @ScottEKendall!)
 #
 ####################################################################################################
 
@@ -33,7 +34,7 @@
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin/
 
 # Script Version
-scriptVersion="2.2.0b2"
+scriptVersion="2.2.0b3"
 
 # Client-side Log
 scriptLog="/var/log/org.churchofjesuschrist.log"
@@ -42,7 +43,7 @@ scriptLog="/var/log/org.churchofjesuschrist.log"
 SECONDS="0"
 
 # Paramter 4: Operation Mode [ test | debug | production ]
-operationMode="${4:-"debug"}"
+operationMode="${4:-"production"}"
 
     # Enable `set -x` if operation mode is "test" or "debug" to help identify variable initialization issues (i.e., SSID)
     [[ "${operationMode}" == "test" || "${operationMode}" == "debug" ]] && set -x
@@ -382,7 +383,8 @@ dialogJSON='
         {"title" : "CrowdStrike Falcon", "subtitle" : "Technology, intelligence, and expertise come together in CrowdStrike Falcon to deliver security that works.", "icon" : "SF=15.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
         {"title" : "Palo Alto GlobalProtect", "subtitle" : "Virtual Private Network (VPN) connection to Church headquarters", "icon" : "SF=16.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
         {"title" : "Network Quality Test", "subtitle" : "Various networking-related tests of your Mac’s Internet connection", "icon" : "SF=17.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-        {"title" : "Computer Inventory", "subtitle" : "The listing of your Mac’s apps and settings", "icon" : "SF=18.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"}
+        {"title" : "Computer Inventory", "subtitle" : "The listing of your Mac’s apps and settings", "icon" : "SF=18.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+        {"title" : "1Password", "subtitle" : "1Password gives you the ability to enforce stringent security standards.", "icon" : "SF=19.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"}
     ]
 }
 '
@@ -1609,6 +1611,44 @@ function checkFileVault() {
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Check Internal Validation — Parameter 2: Target File; Parameter 3: Icon; Parameter 4: Display Name
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+function checkInternal() {
+
+    checkInternalTargetFile="${2}"
+    checkInternalTargetFileIcon="${3}"
+    checkInternalTargetFileDisplayName="${4}"
+
+    notice "Internal Check: ${checkInternalTargetFile} …"
+
+    dialogUpdate "icon: ${checkInternalTargetFileIcon}"
+    dialogUpdate "listitem: index: ${1}, status: wait, statustext: Checking …"
+    dialogUpdate "progress: increment"
+    dialogUpdate "progresstext: Determining status of ${checkInternalTargetFileDisplayName} …"
+
+    sleep "${anticipationDuration}"
+
+    if [[ -e "${checkInternalTargetFile}" ]]; then
+
+        dialogUpdate "listitem: index: ${1}, status: success, statustext: Installed"
+        info "${checkInternalTargetFileDisplayName} installed"
+        
+    else
+
+        dialogUpdate "listitem: index: ${1}, status: fail, statustext: NOT Installed"
+        errorOut "${checkInternalTargetFileDisplayName} NOT Installed"
+        overallHealth+="${checkInternalTargetFileDisplayName}; "
+
+    fi
+
+    sleep "${anticipationDuration}"
+
+}
+
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Check External Validation (where Parameter 2 represents the Jamf Pro Policy Custom Trigger)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -1807,6 +1847,7 @@ if [[ "${operationMode}" == "production" ]]; then
     checkExternal "15" "symvGlobalProtect" "/Applications/GlobalProtect.app"
     checkNetworkQuality "16"
     updateComputerInventory "17"
+    checkInternal "18" "/Applications/1Password.app" "/Applications/1Password.app" "1Password"
 
     dialogUpdate "icon: ${icon}"
     dialogUpdate "progresstext: Final Analysis …"
