@@ -18,7 +18,7 @@
 # HISTORY
 #
 # Version 2.2.0, 25-Jul-2025, Dan K. Snelson (@dan-snelson)
-#   - 
+#   - Improved the GlobalProtect VPN IP detection logic
 #
 ####################################################################################################
 
@@ -33,7 +33,7 @@
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin/
 
 # Script Version
-scriptVersion="2.2.0b1"
+scriptVersion="2.2.0b2"
 
 # Client-side Log
 scriptLog="/var/log/org.churchofjesuschrist.log"
@@ -250,13 +250,12 @@ wiFiIpAddress=$( echo "$activeServices" | /usr/bin/sed '/^$/d' | head -n 1)
 
 globalProtectTest="/Applications/GlobalProtect.app"
 
-if [[ -e "${globalProtectTest}" ]] ; then
-    interface=$( ifconfig | grep -B1 "10\." | grep -oE '10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | head -1 )
-    if [[ -z "$interface" ]]; then
+if [[ -e "${globalProtectTest}" ]]; then
+    globalProtectVpnIP=$( ifconfig | awk '/^utun[0-9]+:/{iface=$1} /inet 10\./{if (iface ~ /^utun/) print $2}' )
+    if [[ -z "${globalProtectVpnIP}" ]]; then
         globalProtectStatus="Inactive"
     else
-        globalProtectIP=$( ifconfig | grep "inet ${interface}" | awk '{ print $2 }' )
-        globalProtectStatus="${globalProtectIP}"
+        globalProtectStatus="${globalProtectVpnIP}"
     fi
 else
     globalProtectStatus="GlobalProtect is NOT installed"
