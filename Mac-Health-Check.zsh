@@ -276,14 +276,14 @@ if [[ "${vpnClientType}" == "paloalto" ]]; then
     vpnStatus="GlobalProtect is NOT installed"
     if [[ -d "/Applications/GlobalProtect.app" ]]; then
         vpnStatus="GlobalProtect is Idle"
-        globalProtectVPNStatus=$(ifconfig gpd0 | awk '/<UP/ {print $2}')
-        globalProtectVPNIP=$(ifconfig gpd0 | awk '/broadcast/ {print $2}')
+        globalProtectInterface=$(netstat -nr | grep utun| head -1| awk '{ print $4 }')
+        globalProtectVPNStatus=$(ifconfig $globalProtectInterface | awk '/inet / {print $2}')
 
-        if [[ ! -z "${globalProtectVPNStatus}" ]]; then
-            vpnStatus="${globalProtectVPNIP}"
+        if [[ -n "${globalProtectVPNStatus}" ]]; then
+            vpnStatus="${globalProtectVPNStatus}"
         fi
     fi
-    if [[ "${vpnClientDataType}" == "extended" ]] && [[ ! -z "${globalProtectVPNStatus}" ]]; then
+    if [[ "${vpnClientDataType}" == "extended" ]] && [[ -n "${globalProtectVPNStatus}" ]]; then
         globalProtectStatus=$( /usr/libexec/PlistBuddy -c "print :Palo\ Alto\ Networks:GlobalProtect:PanGPS:disable-globalprotect" /Library/Preferences/com.paloaltonetworks.GlobalProtect.settings.plist )
         case "${globalProtectStatus}" in
             0 ) globalProtectDisabled="GlobalProtect Running; " ;;
