@@ -17,7 +17,7 @@
 #
 # HISTORY
 #
-# Version 3.0.0, 24-Jul-2025, Dan K. Snelson (@dan-snelson)
+# Version 3.0.0, 25-Jul-2025, Dan K. Snelson (@dan-snelson)
 #   - First (attempt at a) MDM-agnostic release
 #
 ####################################################################################################
@@ -33,7 +33,7 @@
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin/
 
 # Script Version
-scriptVersion="3.0.0b7"
+scriptVersion="3.0.0b8"
 
 # Client-side Log
 scriptLog="/var/log/org.churchofjesuschrist.log"
@@ -42,7 +42,7 @@ scriptLog="/var/log/org.churchofjesuschrist.log"
 SECONDS="0"
 
 # Paramter 4: Operation Mode [ test | debug | production ]
-operationMode="${4:-"debug"}"
+operationMode="${4:-"production"}"
 
     # Enable `set -x` if operation mode is "test" or "debug" to help identify variable initialization issues (i.e., SSID)
     [[ "${operationMode}" == "test" || "${operationMode}" == "debug" ]] && set -x
@@ -100,8 +100,8 @@ excessiveUptimeAlertStyle="warning"
 completionTimer="60"
 
 # Organization's MDM Profile UUID
-# You can find this out by using: `sudo profiles show enrollment`
-organizationMDMuuid="00000000-0000-0000-A000-4A414D460003"
+# You can find this out by using: `sudo profiles show enrollment | grep -A3 -B3 com.apple.mdm`
+organizationMdmUuid=""
 
 
 
@@ -350,12 +350,16 @@ else
 fi
 
 # Download the overlayicon from ${organizationOverlayiconURL}
-curl -o "/var/tmp/overlayicon.png" "${organizationOverlayiconURL}" --silent --show-error --fail
-if [[ "$?" -ne 0 ]]; then
-    echo "Error: Failed to download the overlayicon from '${brandingImageURL}'."
-    overlayicon="/System/Library/CoreServices/Finder.app"
+if [[ -n "${organizationOverlayiconURL}" ]]; then
+    curl -o "/var/tmp/overlayicon.png" "${organizationOverlayiconURL}" --silent --show-error --fail
+    if [[ "$?" -ne 0 ]]; then
+        echo "Error: Failed to download the overlayicon from '${brandingImageURL}'."
+        overlayicon="/System/Library/CoreServices/Finder.app"
+    else
+        overlayicon="/var/tmp/overlayicon.png"
+    fi
 else
-    overlayicon="/var/tmp/overlayicon.png"
+    overlayicon="/System/Library/CoreServices/Finder.app"
 fi
 
 
@@ -436,6 +440,31 @@ fi
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Addigy MDM List Items
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+addigyMdmListitemJSON='
+[
+    {"title" : "macOS Version", "subtitle" : "Organizational standards are the current and immediately previous versions of macOS", "icon" : "SF=01.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Available Updates", "subtitle" : "Keep your Mac up-to-date to ensure its security and performance", "icon" : "SF=02.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "System Integrity Protection", "subtitle" : "System Integrity Protection (SIP) in macOS protects the entire system by preventing the execution of unauthorized code.", "icon" : "SF=03.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Firewall", "subtitle" : "The built-in macOS firewall helps protect your Mac from unauthorized access.", "icon" : "SF=04.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "FileVault Encryption", "subtitle" : "FileVault is built-in to macOS and provides full-disk encryption to help prevent unauthorized access to your Mac", "icon" : "SF=05.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Last Reboot", "subtitle" : "Restart your Mac regularly — at least once a week — can help resolve many common issues", "icon" : "SF=06.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Free Disk Space", "subtitle" : "See KB0080685 Disk Usage to help identify the 50 largest directories", "icon" : "SF=07.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Network Quality Test", "subtitle" : "Various networking-related tests of your Mac’s Internet connection", "icon" : "SF=08.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"}
+]
+'
+# Validate addigyMdmListitemJSON is valid JSON
+if ! echo "$addigyMdmListitemJSON" | jq . >/dev/null 2>&1; then
+  echo "Error: addigyMdmListitemJSON is invalid JSON"
+  echo "$addigyMdmListitemJSON"
+  exit 1
+fi
+
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Jamf Pro List Items
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -448,8 +477,8 @@ jamfProListitemJSON='
     {"title" : "FileVault Encryption", "subtitle" : "FileVault is built-in to macOS and provides full-disk encryption to help prevent unauthorized access to your Mac", "icon" : "SF=05.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
     {"title" : "Last Reboot", "subtitle" : "Restart your Mac regularly — at least once a week — can help resolve many common issues", "icon" : "SF=06.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
     {"title" : "Free Disk Space", "subtitle" : "See KB0080685 Disk Usage to help identify the 50 largest directories", "icon" : "SF=07.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "MDM Profile", "subtitle" : "The presence of the Jamf Pro MDM profile helps ensure your Mac is enrolled", "icon" : "SF=08.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "MDM Certficate Expiration", "subtitle" : "Validate the expiration date of the Jamf Pro MDM certficate", "icon" : "SF=09.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "'${mdmVendor}' MDM Profile", "subtitle" : "The presence of the '${mdmVendor}' MDM profile helps ensure your Mac is enrolled", "icon" : "SF=08.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "'${mdmVendor}' MDM Certficate Expiration", "subtitle" : "Validate the expiration date of the '${mdmVendor}' MDM certficate", "icon" : "SF=09.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
     {"title" : "Apple Push Notification service", "subtitle" : "Validate communication between Apple, Jamf Pro and your Mac", "icon" : "SF=10.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
     {"title" : "Jamf Pro Check-In", "subtitle" : "Your Mac should check-in with the Jamf Pro MDM server multiple times each day", "icon" : "SF=11.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
     {"title" : "Jamf Pro Inventory", "subtitle" : "Your Mac should submit its inventory to the Jamf Pro MDM server daily", "icon" : "SF=12.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
@@ -472,6 +501,61 @@ fi
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# JumpCloud MDM List Items
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+jumpcloudMdmListitemJSON='
+[
+    {"title" : "macOS Version", "subtitle" : "Organizational standards are the current and immediately previous versions of macOS", "icon" : "SF=01.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Available Updates", "subtitle" : "Keep your Mac up-to-date to ensure its security and performance", "icon" : "SF=02.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "System Integrity Protection", "subtitle" : "System Integrity Protection (SIP) in macOS protects the entire system by preventing the execution of unauthorized code.", "icon" : "SF=03.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Firewall", "subtitle" : "The built-in macOS firewall helps protect your Mac from unauthorized access.", "icon" : "SF=04.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "FileVault Encryption", "subtitle" : "FileVault is built-in to macOS and provides full-disk encryption to help prevent unauthorized access to your Mac", "icon" : "SF=05.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Last Reboot", "subtitle" : "Restart your Mac regularly — at least once a week — can help resolve many common issues", "icon" : "SF=06.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Free Disk Space", "subtitle" : "See KB0080685 Disk Usage to help identify the 50 largest directories", "icon" : "SF=07.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Network Quality Test", "subtitle" : "Various networking-related tests of your Mac’s Internet connection", "icon" : "SF=08.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"}
+]
+'
+
+# Validate jumpcloudMdmListitemJSON is valid JSON
+if ! echo "$jumpcloudMdmListitemJSON" | jq . >/dev/null 2>&1; then
+  echo "Error: jumpcloudMdmListitemJSON is invalid JSON"
+  echo "$jumpcloudMdmListitemJSON"
+  exit 1
+fi
+
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Microsoft Intune MDM List Items
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+microsoftMdmListitemJSON='
+[
+    {"title" : "macOS Version", "subtitle" : "Organizational standards are the current and immediately previous versions of macOS", "icon" : "SF=01.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Available Updates", "subtitle" : "Keep your Mac up-to-date to ensure its security and performance", "icon" : "SF=02.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "System Integrity Protection", "subtitle" : "System Integrity Protection (SIP) in macOS protects the entire system by preventing the execution of unauthorized code.", "icon" : "SF=03.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Firewall", "subtitle" : "The built-in macOS firewall helps protect your Mac from unauthorized access.", "icon" : "SF=04.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "FileVault Encryption", "subtitle" : "FileVault is built-in to macOS and provides full-disk encryption to help prevent unauthorized access to your Mac", "icon" : "SF=05.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Last Reboot", "subtitle" : "Restart your Mac regularly — at least once a week — can help resolve many common issues", "icon" : "SF=06.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Free Disk Space", "subtitle" : "See KB0080685 Disk Usage to help identify the 50 largest directories", "icon" : "SF=07.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "'${mdmVendor}' MDM Profile", "subtitle" : "The presence of the '${mdmVendor}' MDM profile helps ensure your Mac is enrolled", "icon" : "SF=08.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "'${mdmVendor}' MDM Certficate Expiration", "subtitle" : "Validate the expiration date of the '${mdmVendor}' MDM certficate", "icon" : "SF=09.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Apple Push Notification service", "subtitle" : "Validate communication between Apple, Mosyle and your Mac", "icon" : "SF=10.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Network Quality Test", "subtitle" : "Various networking-related tests of your Mac’s Internet connection", "icon" : "SF=11.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"}
+]
+'
+
+# Validate microsoftMdmListitemJSON is valid JSON
+if ! echo "$microsoftMdmListitemJSON" | jq . >/dev/null 2>&1; then
+  echo "Error: microsoftMdmListitemJSON is invalid JSON"
+  echo "$microsoftMdmListitemJSON"
+  exit 1
+fi
+
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Mosyle List Items
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -484,8 +568,8 @@ mosyleListitemJSON='
     {"title" : "FileVault Encryption", "subtitle" : "FileVault is built-in to macOS and provides full-disk encryption to help prevent unauthorized access to your Mac", "icon" : "SF=05.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
     {"title" : "Last Reboot", "subtitle" : "Restart your Mac regularly — at least once a week — can help resolve many common issues", "icon" : "SF=06.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
     {"title" : "Free Disk Space", "subtitle" : "See KB0080685 Disk Usage to help identify the 50 largest directories", "icon" : "SF=07.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "MDM Profile", "subtitle" : "The presence of the Mosyle MDM profile helps ensure your Mac is enrolled", "icon" : "SF=08.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "MDM Certficate Expiration", "subtitle" : "Validate the expiration date of the Mosyle MDM certficate", "icon" : "SF=09.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "'${mdmVendor}' MDM Profile", "subtitle" : "The presence of the '${mdmVendor}' MDM profile helps ensure your Mac is enrolled", "icon" : "SF=08.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "'${mdmVendor}' MDM Certficate Expiration", "subtitle" : "Validate the expiration date of the '${mdmVendor}' MDM certficate", "icon" : "SF=09.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
     {"title" : "Apple Push Notification service", "subtitle" : "Validate communication between Apple, Mosyle and your Mac", "icon" : "SF=10.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
     {"title" : "Mosyle Check-In", "subtitle" : "Your Mac should check-in with the Mosyle MDM server multiple times each day", "icon" : "SF=11.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
     {"title" : "Network Quality Test", "subtitle" : "Various networking-related tests of your Mac’s Internet connection", "icon" : "SF=12.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"}
@@ -594,9 +678,20 @@ function get_json_value() {
 
 function webHookMessage() {
 
-    jamfProURL=$(/usr/bin/defaults read /Library/Preferences/com.jamfsoftware.jamf.plist jss_url)
-
-    jamfProComputerURL="${jamfProURL}computers.html?query=${serialNumber}&queryType=COMPUTERS"
+    # Generate MDM-specific `computerMdmURL`
+    case "${mdmVendor}" in
+        "Jamf Pro" )
+            mdmURL=$( /usr/bin/defaults read /Library/Preferences/com.jamfsoftware.jamf.plist jss_url )
+            computerMdmURL="${mdmURL}computers.html?query=${serialNumber}&queryType=COMPUTERS"
+            ;;
+        "Mosyle" )
+            # mdmURL=$( /usr/bin/defaults read /Library/Preferences/com.jamfsoftware.jamf.plist jss_url )
+            # computerMdmURL="${mdmURL}computers.html?query=${serialNumber}&queryType=COMPUTERS"
+            ;;
+        * )
+            return
+            ;;
+    esac
 
     if [[ $webhookURL == *"slack"* ]]; then
         
@@ -652,7 +747,7 @@ function webHookMessage() {
                                 "text": "View in Jamf Pro"
                                 },
                             "style": "primary",
-                            "url": "${jamfProComputerURL}"
+                            "url": "${computerMdmURL}"
                         }
                     ]
                 }
@@ -753,7 +848,7 @@ EOF
                             {
                                 "type": "Action.OpenUrl",
                                 "title": "View in Jamf Pro",
-                                "url": "${jamfProComputerURL}"
+                                "url": "${computerMdmURL}"
                             }
                         ],
                         "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
@@ -906,7 +1001,7 @@ fi
 # Pre-flight Check: Logging Preamble
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-preFlight "\n\n###\n# $humanReadableScriptName (${scriptVersion})\n#MDM Vendor: ${mdmVendor}\n#\n# https://snelson.us/mhc\n###\n"
+preFlight "\n\n###\n# $humanReadableScriptName (${scriptVersion})\n# MDM Vendor: ${mdmVendor}\n#\n# https://snelson.us/mhc\n###\n"
 preFlight "Initiating …"
 
 
@@ -926,6 +1021,16 @@ preFlight "${loggedInUserFullname} (${loggedInUser}) [${loggedInUserID}]"
 
 if [[ $(id -u) -ne 0 ]]; then
     fatal "This script must be run as root; exiting."
+fi
+
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Pre-flight Check: Confirm jq is installed
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+if ! command -v jq &> /dev/null; then
+    fatal "jq is not installed; exiting."
 fi
 
 
@@ -1458,7 +1563,7 @@ function checkMdmProfile() {
 
     sleep "${anticipationDuration}"
 
-    mdmProfileTest=$( profiles show enrollment | grep $organizationMDMuuid )
+    mdmProfileTest=$( profiles show enrollment | grep $organizationMdmUuid 2>/dev/null )
 
     if [[ -n "${mdmProfileTest}" ]]; then
 
@@ -1470,6 +1575,8 @@ function checkMdmProfile() {
         dialogUpdate "listitem: index: ${1}, status: fail, statustext: NOT Installed"
         errorOut "${humanReadableCheckName} (${1})"
         overallHealth+="${humanReadableCheckName}; "
+        errorOut "Execute the following command to determine the UUID of the MDM Profile:"
+        errorOut "sudo profiles show enrollment | grep -A3 -B3 com.apple.mdm"
 
     fi
 
@@ -1515,12 +1622,45 @@ function checkAPNs() {
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Check the expiration date of the JSS Built-in Certificate Authority (thanks, @isaacatmann!)
+# Check the expiration date of the MDM Certificate (thanks, @isaacatmann!)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-function checkJssCertificateExpiration() {
+function checkMdmCertificateExpiration() {
 
-    local humanReadableCheckName="JSS Built-in Certificate Authority"
+    case "${mdmVendor}" in
+
+        "Addigy" )
+            certificateName1="Addigy"
+            certificateName2="Addigy"
+            ;;
+    
+        "Jamf Pro" )
+            certificateName1="JSS Built-in Certificate Authority"
+            certificateName2="JSS BUILT-IN CERTIFICATE AUTHORITY"
+            ;;
+    
+        "JumpCloud" )
+            certificateName1="JumpCloud"
+            certificateName2="JumpCloud"
+            ;;
+
+        "Microsoft Intune" )
+            certificateName1="Microsoft Intune MDM Device CA"
+            certificateName2="MICROSOFT INTUNE MDM DEVICE CA"
+            ;;
+
+        "Mosyle" )
+            certificateName1="MOSYLE CORPORATION"
+            certificateName2="MOSYLE CORPORATION"
+            ;;
+
+        * )
+            return
+            ;;
+
+    esac
+
+    local humanReadableCheckName="${mdmVendor} Certificate Authority"
     notice "Check the expiration date of the ${humanReadableCheckName} …"
 
     dialogUpdate "icon: SF=mail.and.text.magnifyingglass,${organizationColorScheme}"
@@ -1536,7 +1676,7 @@ function checkJssCertificateExpiration() {
     if [[ "${identities}" != "identities" ]]; then
 
         for i in $identities; do
-            if [[ $(security find-certificate -c "$i" | grep issu | tr -d '"') == *"JSS BUILT-IN CERTIFICATE AUTHORITY"* ]] || [[ $(security find-certificate -c "$i" | grep issu | tr -d '"') == *"JSS Built-in Certificate Authority"* ]]; then
+            if [[ $(security find-certificate -c "$i" | grep issu | tr -d '"') == *"${certificateName1}"* ]] || [[ $(security find-certificate -c "$i" | grep issu | tr -d '"') == *"${certificateName2}"* ]]; then
                 expiry=$(security find-certificate -c "$i" -p | openssl x509 -noout -enddate | cut -f2 -d"=")
                 expirationDateFormatted=$( date -j -f "%b %d %H:%M:%S %Y GMT" "${expiry}" "+%d-%b-%Y" )
                 date_seconds=$(date -j -f "%b %d %T %Y %Z" "$expiry" +%s)
@@ -1685,49 +1825,49 @@ function checkJamfProInventory() {
 # Check the expiration date of the Mosyle Built-in Certificate Authority 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-function checkMosyleCertificateExpiration() {
+# function checkMosyleCertificateExpiration() {
 
-    local humanReadableCheckName="Mosyle Built-in Certificate Authority"
-    notice "Check the expiration date of the ${humanReadableCheckName} …"
+#     local humanReadableCheckName="Mosyle Built-in Certificate Authority"
+#     notice "Check the expiration date of the ${humanReadableCheckName} …"
 
-    dialogUpdate "icon: SF=mail.and.text.magnifyingglass,${organizationColorScheme}"
-    dialogUpdate "listitem: index: ${1}, status: wait, statustext: Checking …"
-    dialogUpdate "progress: increment"
-    dialogUpdate "progresstext: Determining MDM Certificate expiration date …"
+#     dialogUpdate "icon: SF=mail.and.text.magnifyingglass,${organizationColorScheme}"
+#     dialogUpdate "listitem: index: ${1}, status: wait, statustext: Checking …"
+#     dialogUpdate "progress: increment"
+#     dialogUpdate "progresstext: Determining MDM Certificate expiration date …"
 
-    sleep "${anticipationDuration}"
+#     sleep "${anticipationDuration}"
 
-    identities=( $( security find-identity -v /Library/Keychains/System.keychain | awk '{print $3}' | tr -d '"' | head -n 1 ) )
-    now_seconds=$( date +%s )
+#     identities=( $( security find-identity -v /Library/Keychains/System.keychain | awk '{print $3}' | tr -d '"' | head -n 1 ) )
+#     now_seconds=$( date +%s )
 
-    if [[ "${identities}" != "identities" ]]; then
+#     if [[ "${identities}" != "identities" ]]; then
 
-        for i in $identities; do
-            if [[ $(security find-certificate -c "$i" | grep issu | tr -d '"') == *"MOSYLE CORPORATION"* ]] || [[ $(security find-certificate -c "$i" | grep issu | tr -d '"') == *"MOSYLE CORPORATION"* ]]; then
-                expiry=$(security find-certificate -c "$i" -p | openssl x509 -noout -enddate | cut -f2 -d"=")
-                expirationDateFormatted=$( date -j -f "%b %d %H:%M:%S %Y GMT" "${expiry}" "+%d-%b-%Y" )
-                date_seconds=$(date -j -f "%b %d %T %Y %Z" "$expiry" +%s)
-                if (( date_seconds > now_seconds )); then
-                    dialogUpdate "listitem: index: ${1}, status: success, statustext: ${expirationDateFormatted}"
-                    info "${humanReadableCheckName} Expiration: ${expirationDateFormatted}"
-                else
-                    dialogUpdate "listitem: index: ${1}, status: fail, statustext: ${expirationDateFormatted}"
-                    errorOut "${humanReadableCheckName} Expiration: ${expirationDateFormatted}"
-                    overallHealth+="${humanReadableCheckName}; "
-                fi
-            fi
-        done
+#         for i in $identities; do
+#             if [[ $(security find-certificate -c "$i" | grep issu | tr -d '"') == *"MOSYLE CORPORATION"* ]] || [[ $(security find-certificate -c "$i" | grep issu | tr -d '"') == *"MOSYLE CORPORATION"* ]]; then
+#                 expiry=$(security find-certificate -c "$i" -p | openssl x509 -noout -enddate | cut -f2 -d"=")
+#                 expirationDateFormatted=$( date -j -f "%b %d %H:%M:%S %Y GMT" "${expiry}" "+%d-%b-%Y" )
+#                 date_seconds=$(date -j -f "%b %d %T %Y %Z" "$expiry" +%s)
+#                 if (( date_seconds > now_seconds )); then
+#                     dialogUpdate "listitem: index: ${1}, status: success, statustext: ${expirationDateFormatted}"
+#                     info "${humanReadableCheckName} Expiration: ${expirationDateFormatted}"
+#                 else
+#                     dialogUpdate "listitem: index: ${1}, status: fail, statustext: ${expirationDateFormatted}"
+#                     errorOut "${humanReadableCheckName} Expiration: ${expirationDateFormatted}"
+#                     overallHealth+="${humanReadableCheckName}; "
+#                 fi
+#             fi
+#         done
     
-    else
+#     else
 
-        expirationDateFormatted="NOT Installed"
-        dialogUpdate "listitem: index: ${1}, status: fail, statustext: ${expirationDateFormatted}"
-        errorOut "${humanReadableCheckName} Expiration: ${expirationDateFormatted}"
-        overallHealth+="${humanReadableCheckName}; "
+#         expirationDateFormatted="NOT Installed"
+#         dialogUpdate "listitem: index: ${1}, status: fail, statustext: ${expirationDateFormatted}"
+#         errorOut "${humanReadableCheckName} Expiration: ${expirationDateFormatted}"
+#         overallHealth+="${humanReadableCheckName}; "
 
-    fi
+#     fi
 
-}
+# }
 
 
 
@@ -2006,17 +2146,29 @@ function updateComputerInventory() {
 
 case ${mdmVendor} in
 
+    "Addigy" )
+        combinedJSON=$( jq -n --argjson dialog "$mainDialogJSON" --argjson listitems "$addigyMdmListitemJSON" '$dialog + { "listitem": $listitems }' )
+        ;;
+
     "Jamf Pro" )
-        combinedJSON=$(jq -n --argjson dialog "$mainDialogJSON" --argjson listitems "$jamfProListitemJSON" '$dialog + { "listitem": $listitems }')
+        combinedJSON=$( jq -n --argjson dialog "$mainDialogJSON" --argjson listitems "$jamfProListitemJSON" '$dialog + { "listitem": $listitems }' )
+        ;;
+
+    "JumpCloud" )
+        combinedJSON=$( jq -n --argjson dialog "$mainDialogJSON" --argjson listitems "$jumpcloudMdmListitemJSON" '$dialog + { "listitem": $listitems }' )
         ;;
 
     "Mosyle" )
-        combinedJSON=$(jq -n --argjson dialog "$mainDialogJSON" --argjson listitems "$mosyleListitemJSON" '$dialog + { "listitem": $listitems }')
+        combinedJSON=$( jq -n --argjson dialog "$mainDialogJSON" --argjson listitems "$mosyleListitemJSON" '$dialog + { "listitem": $listitems }' )
+        ;;
+
+    "Microsoft Intune" )
+        combinedJSON=$( jq -n --argjson dialog "$mainDialogJSON" --argjson listitems "$microsoftMdmListitemJSON" '$dialog + { "listitem": $listitems }' )
         ;;
 
     * )
         warning "Unknown MDM vendor: ${mdmVendor}"
-        combinedJSON=$(jq -n --argjson dialog "$mainDialogJSON" --argjson listitems "$genericMdmListitemJSON" '$dialog + { "listitem": $listitems }')
+        combinedJSON=$( jq -n --argjson dialog "$mainDialogJSON" --argjson listitems "$genericMdmListitemJSON" '$dialog + { "listitem": $listitems }' )
         ;;
 
 esac
@@ -2062,7 +2214,7 @@ if [[ "${operationMode}" == "production" ]]; then
             checkUptime "5"
             checkFreeDiskSpace "6"
             checkMdmProfile "7"
-            checkJssCertificateExpiration "8"
+            checkMdmCertificateExpiration "8"
             checkAPNs "9"
             checkJamfProCheckIn "10"
             checkJamfProInventory "11"
@@ -2074,6 +2226,20 @@ if [[ "${operationMode}" == "production" ]]; then
             updateComputerInventory "17"
             ;;
 
+        "Microsoft Intune" )
+            checkOS "0"
+            checkAvailableSoftwareUpdates "1"
+            checkSIP "2"
+            checkFirewall "3"
+            checkFileVault "4"
+            checkUptime "5"
+            checkFreeDiskSpace "6"
+            checkMdmProfile "7"
+            checkMdmCertificateExpiration "8"
+            checkAPNs "9"
+            checkNetworkQuality "10"
+            ;;
+
         "Mosyle" )
             checkOS "0"
             checkAvailableSoftwareUpdates "1"
@@ -2083,12 +2249,11 @@ if [[ "${operationMode}" == "production" ]]; then
             checkUptime "5"
             checkFreeDiskSpace "6"
             checkMdmProfile "7"
-            checkMosyleCertificateExpiration "8"
+            checkMdmCertificateExpiration "8"
             checkAPNs "9"
             checkMosyleCheckIn "10"
             checkNetworkQuality "11"
             ;;
-
 
         * )
             checkOS "0"
@@ -2100,6 +2265,7 @@ if [[ "${operationMode}" == "production" ]]; then
             checkFreeDiskSpace "6"
             checkNetworkQuality "7"
             ;;
+    
     esac
 
     dialogUpdate "icon: ${icon}"
