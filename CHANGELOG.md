@@ -2,11 +2,15 @@
 
 ## CHANGELOG
 
-### 3.0.0 (25-Jul-2025)
+### 3.0.0 (26-Jul-2025)
 
 - First (attempt at a) MDM-agnostic release
 
 ---
+
+### 2.2.0 (25-Jul-2025)
+- Improved the GlobalProtect VPN IP detection logic
+- Added an option to show if an app is installed (Feature Request #18; thanks, @ScottEKendall!)
 
 ### 2.1.0 (24-Jul-2025)
 - Added an `operationMode` of "debug" to specifically enable swiftDialog debugging
