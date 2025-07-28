@@ -52,6 +52,7 @@ The following health checks and information reporting are included and the scrip
 1. System Integrity Protection
 1. Firewall
 1. FileVault Encryption
+1. VPN Client
 1. Last Reboot
 1. Free Disk Space
 1. MDM Profile
@@ -59,6 +60,7 @@ The following health checks and information reporting are included and the scrip
 1. Apple Push Notification service
 1. Jamf Pro Check-in
 1. Jamf Pro Inventory
+1. Organizationally required Applications (i.e., 1Password)
 1. BeyondTrust Privilege Management*
 1. Cisco Umbrella*
 1. CrowdStrike Falcon*

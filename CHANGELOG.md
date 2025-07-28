@@ -2,9 +2,10 @@
 
 ## CHANGELOG
 
-### 2.2.0 (25-Jul-2025)
+### 2.2.0 (28-Jul-2025)
 - Improved the GlobalProtect VPN IP detection logic
 - Added an option to show if an app is installed (Feature Request #18; thanks, @ScottEKendall!)
+- Add framework for different VPN clients and an internal VPN Client Check (Pull Request #16; thanks for another one, @HowardGMac!)
 
 ### 2.1.0 (24-Jul-2025)
 - Added an `operationMode` of "debug" to specifically enable swiftDialog debugging
