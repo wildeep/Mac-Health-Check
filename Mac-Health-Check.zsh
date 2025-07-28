@@ -33,7 +33,7 @@
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin/
 
 # Script Version
-scriptVersion="3.0.0b9"
+scriptVersion="3.0.0b10"
 
 # Client-side Log
 scriptLog="/var/log/org.churchofjesuschrist.log"
@@ -73,6 +73,12 @@ kerberosRealm=""
 
 # Organization's Firewall Type [ socketfilterfw | pf ]
 organizationFirewall="socketfilterfw"
+
+# Organization's VPN client type [none | paloalto | cisco]
+vpnClientType="paloalto"
+
+# Organization's VPN data type [basic | extended]
+vpnClientDataType="basic"
 
 # "Anticipation" Duration (in seconds)
 anticipationDuration="2"
@@ -298,22 +304,78 @@ wiFiIpAddress=$( echo "$activeServices" | /usr/bin/sed '/^$/d' | head -n 1)
 
 
 
+####################################################################################################
+#
+# VPN Client Information
+#
+####################################################################################################
+
+if [[ "${vpnClientType}" == "none" ]]; then
+    vpnStatus="None"
+fi
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Palo Alto Networks GlobalProtect VPN IP address
+# Palo Alto Networks GlobalProtect VPN Information
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-globalProtectTest="/Applications/GlobalProtect.app"
+if [[ "${vpnClientType}" == "paloalto" ]]; then
+    vpnAppName="GlobalProtect VPN Client"
+    vpnAppPath="/Applications/GlobalProtect.app"
+    vpnStatus="GlobalProtect is NOT installed"
+    if [[ -d "${vpnAppPath}" ]]; then
+        vpnStatus="GlobalProtect is Idle"
+        globalProtectInterface=$(netstat -nr | grep utun| head -1| awk '{ print $4 }')
+        globalProtectVPNStatus=$(ifconfig $globalProtectInterface | awk '/inet / {print $2}')
 
-if [[ -e "${globalProtectTest}" ]] ; then
-    interface=$( ifconfig | grep -B1 "10\." | grep -oE '10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | head -1 )
-    if [[ -z "$interface" ]]; then
-        globalProtectStatus="Inactive"
-    else
-        globalProtectIP=$( ifconfig | grep "inet ${interface}" | awk '{ print $2 }' )
-        globalProtectStatus="${globalProtectIP}"
+        if [[ -n "${globalProtectVPNStatus}" ]]; then
+            vpnStatus="${globalProtectVPNStatus}"
+        fi
     fi
-else
-    globalProtectStatus="GlobalProtect is NOT installed"
+    if [[ "${vpnClientDataType}" == "extended" ]] && [[ -n "${globalProtectVPNStatus}" ]]; then
+        globalProtectStatus=$( /usr/libexec/PlistBuddy -c "print :Palo\ Alto\ Networks:GlobalProtect:PanGPS:disable-globalprotect" /Library/Preferences/com.paloaltonetworks.GlobalProtect.settings.plist )
+        case "${globalProtectStatus}" in
+            0 ) globalProtectDisabled="GlobalProtect Running; " ;;
+            1 ) globalProtectDisabled="GlobalProtect Disabled; " ;;
+            * ) globalProtectDisabled="GlobalProtect Unknown; " ;;
+        esac
+        globalProtectUserResult=$( /usr/bin/defaults read /Users/${loggedInUser}/Library/Preferences/com.paloaltonetworks.GlobalProtect.client User 2>&1 )
+        if [[ "${globalProtectUserResult}"  == *"Does Not Exist" || -z "${globalProtectUserResult}" ]]; then
+            globalProtectUserResult="${loggedInUser} NOT logged-in to GlobalProtect; "
+        elif [[ ! -z "${globalProtectUserResult}" ]]; then
+            globalProtectUserResult="\"${loggedInUser}\" logged-in to GlobalProtect; "
+        fi
+        vpnExtendedStatus="${globalProtectDisabled}${globalProtectUserResult}"
+    fi
+fi
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Cisco VPN Information
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+if [[ "${vpnClientType}" == "cisco" ]]; then
+    vpnAppName="Cisco VPN Client"
+    vpnAppPath="/Applications/Cisco/Cisco AnyConnect Secure Mobility Client.app"
+    vpnStatus="Cisco VPN is NOT installed"
+    if [[ -d "${vpnAppPath}" ]]; then
+        ciscoVPNStats=$(/opt/cisco/anyconnect/bin/vpn -s stats)
+    elif [[ -d "/Applications/Cisco/Cisco Secure Client.app" ]]; then
+        ciscoVPNStats=$(/opt/cisco/secureclient/bin/vpn -s stats)
+    fi
+    if [[ -n $ciscoVPNStats ]]; then
+        ciscoVPNStatus=$(echo "${ciscoVPNStats}" | grep -m1 'Connection State:' | awk '{print $3}')
+        ciscoVPNIP=$(echo "${ciscoVPNStats}" | grep -m1 'Client Address' | awk '{print $4}')
+        if [[ "${ciscoVPNStatus}" == "Connected" ]]; then
+            vpnStatus="${ciscoVPNIP}"
+        else
+            vpnStatus="Cisco VPN is Idle"
+        fi
+        if [[ "${vpnClientDataType}" == "extended" ]] && [[ "${ciscoVPNStatus}" == "Connected" ]]; then
+            ciscoVPNServer=$(echo "${ciscoVPNStats}" | grep -m1 'Server Address:' | awk '{print $3}')
+            ciscoVPNDuration=$(echo "${ciscoVPNStats}" | grep -m1 'Duration:' | awk '{print $2}')
+            ciscoVPNSessionDisconnect=$(echo "${ciscoVPNStats}" | grep -m1 'Session Disconnect:' | awk '{print $3, $4, $5, $6, $7}')
+            vpnExtendedStatus="VPN Server Address: ${ciscoVPNServer} VPN Connection Duration: ${ciscoVPNDuration} VPN Session Disconnect: $ciscoVPNSessionDisconnect"
+        fi
+    fi
 fi
 
 
@@ -416,7 +478,7 @@ mainDialogJSON='
     "icon" : "'"${icon}"'",
     "overlayicon" : "'"${overlayicon}"'",
     "message" : "none",
-    "iconsize" : "198.0",
+    "iconsize" : "198",
     "infobox" : "**User:** '"{userfullname}"'<br><br>**Computer Model:** '"{computermodel}"'<br><br>**Serial Number:** '"{serialnumber}"' ",
     "infobuttontext" : "'"${supportKB}"'",
     "infobuttonaction" : "'"${infobuttonaction}"'",
@@ -905,7 +967,7 @@ function quitScript() {
     esac
 
     if [[ -n "${overallHealth}" ]]; then
-        dialogUpdate "icon: SF=xmark.circle.fill,weight=bold,colour1=#BB1717,colour2=#F31F1F"
+        dialogUpdate "icon: SF=xmark.circle,weight=bold,colour1=#BB1717,colour2=#F31F1F"
         dialogUpdate "title: Computer Unhealthy (as of $( date '+%Y-%m-%d-%H%M%S' ))"
         if [[ -n "${webhookURL}" ]]; then
             info "Sending webhook message"
@@ -915,7 +977,7 @@ function quitScript() {
         errorOut "${overallHealth%%; }"
         exitCode="1"
     else
-        dialogUpdate "icon: SF=checkmark.circle.fill,weight=bold,colour1=#00ff44,colour2=#075c1e"
+        dialogUpdate "icon: SF=checkmark.circle,weight=bold,colour1=#00ff44,colour2=#075c1e"
         dialogUpdate "title: Computer Healthy (as of $( date '+%Y-%m-%d-%H%M%S' ))"
     fi
 
@@ -1607,7 +1669,7 @@ function checkAPNs() {
     local humanReadableCheckName="Apple Push Notification service"
     notice "Check ${humanReadableCheckName} …"
 
-    dialogUpdate "icon: SF=wave.3.up.circle.fill,${organizationColorScheme}"
+    dialogUpdate "icon: SF=wave.3.up.circle,${organizationColorScheme}"
     dialogUpdate "listitem: index: ${1}, status: wait, statustext: Checking …"
     dialogUpdate "progress: increment"
     dialogUpdate "progresstext: Determining ${humanReadableCheckName} status …"
@@ -1947,6 +2009,87 @@ function checkFileVault() {
         overallHealth+="${humanReadableCheckName}; "
 
     fi
+
+}
+
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Check Internal Validation — Parameter 2: Target File; Parameter 3: Icon; Parameter 4: Display Name
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+function checkInternal() {
+
+    checkInternalTargetFile="${2}"
+    checkInternalTargetFileIcon="${3}"
+    checkInternalTargetFileDisplayName="${4}"
+
+    notice "Internal Check: ${checkInternalTargetFile} …"
+
+    dialogUpdate "icon: ${checkInternalTargetFileIcon}"
+    dialogUpdate "listitem: index: ${1}, status: wait, statustext: Checking …"
+    dialogUpdate "progress: increment"
+    dialogUpdate "progresstext: Determining status of ${checkInternalTargetFileDisplayName} …"
+
+    sleep "${anticipationDuration}"
+
+    if [[ -e "${checkInternalTargetFile}" ]]; then
+
+        dialogUpdate "listitem: index: ${1}, status: success, statustext: Installed"
+        info "${checkInternalTargetFileDisplayName} installed"
+        
+    else
+
+        dialogUpdate "listitem: index: ${1}, status: fail, statustext: NOT Installed"
+        errorOut "${checkInternalTargetFileDisplayName} NOT Installed"
+        overallHealth+="${checkInternalTargetFileDisplayName}; "
+
+    fi
+
+    sleep "${anticipationDuration}"
+
+}
+
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Check VPN Installation
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+function checkVPN() {
+
+    notice "Check ${vpnAppName} …"
+
+    dialogUpdate "icon: ${vpnAppPath}"
+    dialogUpdate "listitem: index: ${1}, status: wait, statustext: Checking …"
+    dialogUpdate "progress: increment"
+    dialogUpdate "progresstext: Determining status of ${vpnAppName} …"
+
+    # sleep "${anticipationDuration}"
+
+    case ${vpnStatus} in
+
+        *"NOT installed"* )
+            dialogUpdate "listitem: index: ${1}, status: fail, statustext: Failed"
+            errorOut "${vpnAppName} Failed"
+            overallHealth+="${vpnAppName}; "
+            ;;
+
+        *"Idle"* )
+            dialogUpdate "listitem: index: ${1}, status: success, statustext: Idle"
+            info "${vpnAppName} idle"
+            ;;
+            
+        "None" )
+            dialogUpdate "listitem: index: ${1}, status: success, statustext: No VPN"
+            info "No VPN"
+            ;;
+
+        * )
+            dialogUpdate "listitem: index: ${1}, status: success, statustext: Connected"
+            info "${vpnAppName} connected"
+            ;;
+    esac
 
 }
 
