@@ -21,6 +21,7 @@
 #   - Improved the GlobalProtect VPN IP detection logic
 #   - Added an option to show if an app is installed (Feature Request #18; thanks, @ScottEKendall!)
 #   - Add framework for different VPN clients and an internal VPN Client Check (Pull Request #16; thanks for another one, @HowardGMac!)
+#   - Addressed MHC does not show SF Symbols in the upper left corner - needs region check (Issue #21; thanks, @hbokh!)
 #
 ####################################################################################################
 
@@ -35,7 +36,7 @@
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin/
 
 # Script Version
-scriptVersion="2.2.0b4"
+scriptVersion="2.2.0b5"
 
 # Client-side Log
 scriptLog="/var/log/org.churchofjesuschrist.log"
@@ -414,7 +415,7 @@ dialogJSON='
     "icon" : "'"${icon}"'",
     "overlayicon" : "'"${overlayicon}"'",
     "message" : "none",
-    "iconsize" : "198.0",
+    "iconsize" : "198",
     "infobox" : "**User:** '"{userfullname}"'<br><br>**Computer Model:** '"{computermodel}"'<br><br>**Serial Number:** '"{serialnumber}"' ",
     "infobuttontext" : "'"${supportKB}"'",
     "infobuttonaction" : "'"${infobuttonaction}"'",
