@@ -36,7 +36,7 @@
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin/
 
 # Script Version
-scriptVersion="2.2.0b5"
+scriptVersion="2.2.0b6"
 
 # Client-side Log
 scriptLog="/var/log/org.churchofjesuschrist.log"
@@ -77,11 +77,11 @@ kerberosRealm=""
 # Organization's Firewall Type [ socketfilterfw | pf ]
 organizationFirewall="socketfilterfw"
 
-# Organization's VPN client type [none | paloalto | cisco]
-vpnClientType="paloalto"
+# Organization's VPN client type [ none | paloalto | cisco ]
+vpnClientVendor="paloalto"
 
-# Organization's VPN data type [basic | extended]
-vpnClientDataType="basic"
+# Organization's VPN data type [ basic | extended ]
+vpnClientDataType="extended"
 
 # "Anticipation" Duration (in seconds)
 anticipationDuration="2"
@@ -259,7 +259,7 @@ wiFiIpAddress=$( echo "$activeServices" | /usr/bin/sed '/^$/d' | head -n 1)
 #
 ####################################################################################################
 
-if [[ "${vpnClientType}" == "none" ]]; then
+if [[ "${vpnClientVendor}" == "none" ]]; then
     vpnStatus="None"
 fi
 
@@ -267,14 +267,14 @@ fi
 # Palo Alto Networks GlobalProtect VPN Information
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-if [[ "${vpnClientType}" == "paloalto" ]]; then
+if [[ "${vpnClientVendor}" == "paloalto" ]]; then
     vpnAppName="GlobalProtect VPN Client"
     vpnAppPath="/Applications/GlobalProtect.app"
     vpnStatus="GlobalProtect is NOT installed"
     if [[ -d "${vpnAppPath}" ]]; then
         vpnStatus="GlobalProtect is Idle"
-        globalProtectInterface=$(netstat -nr | grep utun| head -1| awk '{ print $4 }')
-        globalProtectVPNStatus=$(ifconfig $globalProtectInterface | awk '/inet / {print $2}')
+        globalProtectInterface=$( netstat -nr | grep utun | head -1 | awk '{ print $4 }' )
+        globalProtectVPNStatus=$( ifconfig $globalProtectInterface | awk '/inet / {print $2}' )
 
         if [[ -n "${globalProtectVPNStatus}" ]]; then
             vpnStatus="${globalProtectVPNStatus}"
@@ -301,7 +301,7 @@ fi
 # Cisco VPN Information
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-if [[ "${vpnClientType}" == "cisco" ]]; then
+if [[ "${vpnClientVendor}" == "cisco" ]]; then
     vpnAppName="Cisco VPN Client"
     vpnAppPath="/Applications/Cisco/Cisco AnyConnect Secure Mobility Client.app"
     vpnStatus="Cisco VPN is NOT installed"
@@ -355,7 +355,7 @@ dialogCommandFile=$( mktemp /var/tmp/dialogCommandFile_${organizationScriptName}
 chmod 644 "${dialogCommandFile}"
 
 # The total number of steps for the progress bar, plus two (i.e., "progress: increment")
-progressSteps="20"
+progressSteps="21"
 
 # Set initial icon based on whether the Mac is a desktop or laptop
 if system_profiler SPPowerDataType | grep -q "Battery Power"; then
@@ -1738,12 +1738,12 @@ function checkVPN() {
             ;;
 
         *"Idle"* )
-            dialogUpdate "listitem: index: ${1}, status: success, statustext: Idle"
+            dialogUpdate "listitem: index: ${1}, status: error, statustext: Idle"
             info "${vpnAppName} idle"
             ;;
             
         "None" )
-            dialogUpdate "listitem: index: ${1}, status: success, statustext: No VPN"
+            dialogUpdate "listitem: index: ${1}, status: error, statustext: No VPN"
             info "No VPN"
             ;;
 
