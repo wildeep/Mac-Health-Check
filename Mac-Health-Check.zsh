@@ -239,9 +239,8 @@ fi
 
 networkServices=$( networksetup -listallnetworkservices | grep -v asterisk )
 
-while IFS= read aService
-do
-    activePort=$( /usr/sbin/networksetup -getinfo "$aService" | /usr/bin/grep "IP address" | /usr/bin/grep -v "IPv6" )
+while IFS= read -r aService; do
+    activePort=$( networksetup -getinfo "$aService" | grep "IP address" | grep -v "IPv6" )
     if [ "$activePort" != "" ] && [ "$activeServices" != "" ]; then
         activeServices="$activeServices\n$aService $activePort"
     elif [ "$activePort" != "" ] && [ "$activeServices" = "" ]; then
@@ -249,7 +248,7 @@ do
     fi
 done <<< "$networkServices"
 
-wiFiIpAddress=$( echo "$activeServices" | /usr/bin/sed '/^$/d' | head -n 1)
+wiFiIpAddress=$( echo "$activeServices" | sed '/^$/d' | head -n 1 )
 
 
 
