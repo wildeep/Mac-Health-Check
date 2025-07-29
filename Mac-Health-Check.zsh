@@ -33,7 +33,7 @@
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin/
 
 # Script Version
-scriptVersion="3.0.0b10"
+scriptVersion="3.0.0b11"
 
 # Client-side Log
 scriptLog="/var/log/org.churchofjesuschrist.log"
@@ -74,11 +74,11 @@ kerberosRealm=""
 # Organization's Firewall Type [ socketfilterfw | pf ]
 organizationFirewall="socketfilterfw"
 
-# Organization's VPN client type [none | paloalto | cisco]
-vpnClientType="paloalto"
+# Organization's VPN client type [ none | paloalto | cisco ]
+vpnClientVendor="paloalto"
 
-# Organization's VPN data type [basic | extended]
-vpnClientDataType="basic"
+# Organization's VPN data type [ basic | extended ]
+vpnClientDataType="extended"
 
 # "Anticipation" Duration (in seconds)
 anticipationDuration="2"
@@ -310,7 +310,7 @@ wiFiIpAddress=$( echo "$activeServices" | /usr/bin/sed '/^$/d' | head -n 1)
 #
 ####################################################################################################
 
-if [[ "${vpnClientType}" == "none" ]]; then
+if [[ "${vpnClientVendor}" == "none" ]]; then
     vpnStatus="None"
 fi
 
@@ -318,14 +318,14 @@ fi
 # Palo Alto Networks GlobalProtect VPN Information
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-if [[ "${vpnClientType}" == "paloalto" ]]; then
+if [[ "${vpnClientVendor}" == "paloalto" ]]; then
     vpnAppName="GlobalProtect VPN Client"
     vpnAppPath="/Applications/GlobalProtect.app"
     vpnStatus="GlobalProtect is NOT installed"
     if [[ -d "${vpnAppPath}" ]]; then
         vpnStatus="GlobalProtect is Idle"
-        globalProtectInterface=$(netstat -nr | grep utun| head -1| awk '{ print $4 }')
-        globalProtectVPNStatus=$(ifconfig $globalProtectInterface | awk '/inet / {print $2}')
+        globalProtectInterface=$( netstat -nr | grep utun | head -1 | awk '{ print $4 }' )
+        globalProtectVPNStatus=$( ifconfig $globalProtectInterface | awk '/inet / {print $2}' )
 
         if [[ -n "${globalProtectVPNStatus}" ]]; then
             vpnStatus="${globalProtectVPNStatus}"
@@ -352,7 +352,7 @@ fi
 # Cisco VPN Information
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-if [[ "${vpnClientType}" == "cisco" ]]; then
+if [[ "${vpnClientVendor}" == "cisco" ]]; then
     vpnAppName="Cisco VPN Client"
     vpnAppPath="/Applications/Cisco/Cisco AnyConnect Secure Mobility Client.app"
     vpnStatus="Cisco VPN is NOT installed"
@@ -406,7 +406,7 @@ dialogCommandFile=$( mktemp /var/tmp/dialogCommandFile_${organizationScriptName}
 chmod 644 "${dialogCommandFile}"
 
 # The total number of steps for the progress bar, plus two (i.e., "progress: increment")
-progressSteps="21"
+progressSteps="23"
 
 # Set initial icon based on whether the Mac is a desktop or laptop
 if system_profiler SPPowerDataType | grep -q "Battery Power"; then
@@ -449,7 +449,7 @@ supportKBURL="[${supportKB}](${infobuttonaction})"
 # Help Message Variables
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-helpmessage="For assistance, please contact: **${supportTeamName}**<br>- **Telephone:** ${supportTeamPhone}<br>- **Email:** ${supportTeamEmail}<br>- **Website:** ${supportTeamWebsite}<br>- **Knowledge Base Article:** ${supportKBURL}<br><br>**User Information:**<br>- **Full Name:** ${loggedInUserFullname}<br>- **User Name:** ${loggedInUser}<br>- **User ID:** ${loggedInUserID}<br>- **Secure Token:** ${secureToken}<br>- **Location Services:** ${locationServicesStatus}<br>- **Microsoft OneDrive Sync Date:** ${oneDriveSyncDate}<br>- **Platform SSOe:** ${platformSSOeResult}<br><br>**Computer Information:**<br>- **macOS:** ${osVersion} (${osBuild})<br>- **Computer Name:** ${computerName}<br>- **Serial Number:** ${serialNumber}<br>- **Wi-Fi:** ${ssid}<br>- ${wiFiIpAddress}<br>- **VPN IP:** ${globalProtectStatus}"
+helpmessage="For assistance, please contact: **${supportTeamName}**<br>- **Telephone:** ${supportTeamPhone}<br>- **Email:** ${supportTeamEmail}<br>- **Website:** ${supportTeamWebsite}<br>- **Knowledge Base Article:** ${supportKBURL}<br><br>**User Information:**<br>- **Full Name:** ${loggedInUserFullname}<br>- **User Name:** ${loggedInUser}<br>- **User ID:** ${loggedInUserID}<br>- **Secure Token:** ${secureToken}<br>- **Location Services:** ${locationServicesStatus}<br>- **Microsoft OneDrive Sync Date:** ${oneDriveSyncDate}<br>- **Platform SSOe:** ${platformSSOeResult}<br><br>**Computer Information:**<br>- **macOS:** ${osVersion} (${osBuild})<br>- **Computer Name:** ${computerName}<br>- **Serial Number:** ${serialNumber}<br>- **Wi-Fi:** ${ssid}<br>- ${wiFiIpAddress}<br>- **VPN IP:** ${vpnStatus}"
 
 case ${mdmVendor} in
 
@@ -541,20 +541,21 @@ jamfProListitemJSON='
     {"title" : "System Integrity Protection", "subtitle" : "System Integrity Protection (SIP) in macOS protects the entire system by preventing the execution of unauthorized code.", "icon" : "SF=03.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
     {"title" : "Firewall", "subtitle" : "The built-in macOS firewall helps protect your Mac from unauthorized access.", "icon" : "SF=04.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
     {"title" : "FileVault Encryption", "subtitle" : "FileVault is built-in to macOS and provides full-disk encryption to help prevent unauthorized access to your Mac", "icon" : "SF=05.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Last Reboot", "subtitle" : "Restart your Mac regularly — at least once a week — can help resolve many common issues", "icon" : "SF=06.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Free Disk Space", "subtitle" : "See KB0080685 Disk Usage to help identify the 50 largest directories", "icon" : "SF=07.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "'${mdmVendor}' MDM Profile", "subtitle" : "The presence of the '${mdmVendor}' MDM profile helps ensure your Mac is enrolled", "icon" : "SF=08.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "'${mdmVendor}' MDM Certficate Expiration", "subtitle" : "Validate the expiration date of the '${mdmVendor}' MDM certficate", "icon" : "SF=09.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Apple Push Notification service", "subtitle" : "Validate communication between Apple, Jamf Pro and your Mac", "icon" : "SF=10.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Jamf Pro Check-In", "subtitle" : "Your Mac should check-in with the Jamf Pro MDM server multiple times each day", "icon" : "SF=11.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Jamf Pro Inventory", "subtitle" : "Your Mac should submit its inventory to the Jamf Pro MDM server daily", "icon" : "SF=12.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "1Password", "subtitle" : "1Password gives you the ability to enforce stringent security standards.", "icon" : "SF=13.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "BeyondTrust Privilege Management", "subtitle" : "Privilege Management for Mac pairs powerful least-privilege management and application control", "icon" : "SF=14.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Cisco Umbrella", "subtitle" : "Cisco Umbrella combines multiple security functions so you can extend data protection anywhere.", "icon" : "SF=15.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "CrowdStrike Falcon", "subtitle" : "Technology, intelligence, and expertise come together in CrowdStrike Falcon to deliver security that works.", "icon" : "SF=16.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Palo Alto GlobalProtect", "subtitle" : "Virtual Private Network (VPN) connection to Church headquarters", "icon" : "SF=17.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Network Quality Test", "subtitle" : "Various networking-related tests of your Mac’s Internet connection", "icon" : "SF=18.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Computer Inventory", "subtitle" : "The listing of your Mac’s apps and settings", "icon" : "SF=19.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"}
+    {"title" : "VPN Client", "subtitle" : "Your Mac should have the proper VPN client installed and usable", "icon" : "SF=06.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Last Reboot", "subtitle" : "Restart your Mac regularly — at least once a week — can help resolve many common issues", "icon" : "SF=07.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Free Disk Space", "subtitle" : "See KB0080685 Disk Usage to help identify the 50 largest directories", "icon" : "SF=08.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "'${mdmVendor}' MDM Profile", "subtitle" : "The presence of the '${mdmVendor}' MDM profile helps ensure your Mac is enrolled", "icon" : "SF=09.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "'${mdmVendor}' MDM Certficate Expiration", "subtitle" : "Validate the expiration date of the '${mdmVendor}' MDM certficate", "icon" : "SF=10.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Apple Push Notification service", "subtitle" : "Validate communication between Apple, Jamf Pro and your Mac", "icon" : "SF=11.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Jamf Pro Check-In", "subtitle" : "Your Mac should check-in with the Jamf Pro MDM server multiple times each day", "icon" : "SF=12.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Jamf Pro Inventory", "subtitle" : "Your Mac should submit its inventory to the Jamf Pro MDM server daily", "icon" : "SF=13.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "1Password", "subtitle" : "1Password gives you the ability to enforce stringent security standards.", "icon" : "SF=14.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "BeyondTrust Privilege Management", "subtitle" : "Privilege Management for Mac pairs powerful least-privilege management and application control", "icon" : "SF=15.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Cisco Umbrella", "subtitle" : "Cisco Umbrella combines multiple security functions so you can extend data protection anywhere.", "icon" : "SF=16.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "CrowdStrike Falcon", "subtitle" : "Technology, intelligence, and expertise come together in CrowdStrike Falcon to deliver security that works.", "icon" : "SF=17.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Palo Alto GlobalProtect", "subtitle" : "Virtual Private Network (VPN) connection to Church headquarters", "icon" : "SF=18.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Network Quality Test", "subtitle" : "Various networking-related tests of your Mac’s Internet connection", "icon" : "SF=19.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Computer Inventory", "subtitle" : "The listing of your Mac’s apps and settings", "icon" : "SF=20.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"}
 ]
 '
 
@@ -578,9 +579,10 @@ jumpcloudMdmListitemJSON='
     {"title" : "System Integrity Protection", "subtitle" : "System Integrity Protection (SIP) in macOS protects the entire system by preventing the execution of unauthorized code.", "icon" : "SF=03.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
     {"title" : "Firewall", "subtitle" : "The built-in macOS firewall helps protect your Mac from unauthorized access.", "icon" : "SF=04.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
     {"title" : "FileVault Encryption", "subtitle" : "FileVault is built-in to macOS and provides full-disk encryption to help prevent unauthorized access to your Mac", "icon" : "SF=05.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Last Reboot", "subtitle" : "Restart your Mac regularly — at least once a week — can help resolve many common issues", "icon" : "SF=06.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Free Disk Space", "subtitle" : "See KB0080685 Disk Usage to help identify the 50 largest directories", "icon" : "SF=07.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Network Quality Test", "subtitle" : "Various networking-related tests of your Mac’s Internet connection", "icon" : "SF=08.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"}
+    {"title" : "VPN Client", "subtitle" : "Your Mac should have the proper VPN client installed and usable", "icon" : "SF=06.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Last Reboot", "subtitle" : "Restart your Mac regularly — at least once a week — can help resolve many common issues", "icon" : "SF=07.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Free Disk Space", "subtitle" : "See KB0080685 Disk Usage to help identify the 50 largest directories", "icon" : "SF=08.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Network Quality Test", "subtitle" : "Various networking-related tests of your Mac’s Internet connection", "icon" : "SF=09.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"}
 ]
 '
 
@@ -604,13 +606,14 @@ microsoftMdmListitemJSON='
     {"title" : "System Integrity Protection", "subtitle" : "System Integrity Protection (SIP) in macOS protects the entire system by preventing the execution of unauthorized code.", "icon" : "SF=03.square,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
     {"title" : "Firewall", "subtitle" : "The built-in macOS firewall helps protect your Mac from unauthorized access.", "icon" : "SF=04.square,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
     {"title" : "FileVault Encryption", "subtitle" : "FileVault is built-in to macOS and provides full-disk encryption to help prevent unauthorized access to your Mac", "icon" : "SF=05.square,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Last Reboot", "subtitle" : "Restart your Mac regularly — at least once a week — can help resolve many common issues", "icon" : "SF=06.square,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Free Disk Space", "subtitle" : "See KB0080685 Disk Usage to help identify the 50 largest directories", "icon" : "SF=07.square,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "'${mdmVendor}' MDM Profile", "subtitle" : "The presence of the '${mdmVendor}' MDM profile helps ensure your Mac is enrolled", "icon" : "SF=08.square,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "'${mdmVendor}' MDM Certficate Expiration", "subtitle" : "Validate the expiration date of the '${mdmVendor}' MDM certficate", "icon" : "SF=09.square,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Apple Push Notification service", "subtitle" : "Validate communication between Apple, Mosyle and your Mac", "icon" : "SF=10.square,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Intune Company Portal", "subtitle" : "Intune Company Portal allows you to secure access organizational resources.", "icon" : "SF=11.square,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Network Quality Test", "subtitle" : "Various networking-related tests of your Mac’s Internet connection", "icon" : "SF=12.square,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"}
+    {"title" : "VPN Client", "subtitle" : "Your Mac should have the proper VPN client installed and usable", "icon" : "SF=06.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Last Reboot", "subtitle" : "Restart your Mac regularly — at least once a week — can help resolve many common issues", "icon" : "SF=07.square,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Free Disk Space", "subtitle" : "See KB0080685 Disk Usage to help identify the 50 largest directories", "icon" : "SF=08.square,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "'${mdmVendor}' MDM Profile", "subtitle" : "The presence of the '${mdmVendor}' MDM profile helps ensure your Mac is enrolled", "icon" : "SF=09.square,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "'${mdmVendor}' MDM Certficate Expiration", "subtitle" : "Validate the expiration date of the '${mdmVendor}' MDM certficate", "icon" : "SF=10.square,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Apple Push Notification service", "subtitle" : "Validate communication between Apple, Mosyle and your Mac", "icon" : "SF=11.square,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Intune Company Portal", "subtitle" : "Intune Company Portal allows you to secure access organizational resources.", "icon" : "SF=12.square,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Network Quality Test", "subtitle" : "Various networking-related tests of your Mac’s Internet connection", "icon" : "SF=13.square,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"}
 ]
 '
 
@@ -634,13 +637,14 @@ mosyleListitemJSON='
     {"title" : "System Integrity Protection", "subtitle" : "System Integrity Protection (SIP) in macOS protects the entire system by preventing the execution of unauthorized code.", "icon" : "SF=03.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
     {"title" : "Firewall", "subtitle" : "The built-in macOS firewall helps protect your Mac from unauthorized access.", "icon" : "SF=04.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
     {"title" : "FileVault Encryption", "subtitle" : "FileVault is built-in to macOS and provides full-disk encryption to help prevent unauthorized access to your Mac", "icon" : "SF=05.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Last Reboot", "subtitle" : "Restart your Mac regularly — at least once a week — can help resolve many common issues", "icon" : "SF=06.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Free Disk Space", "subtitle" : "See KB0080685 Disk Usage to help identify the 50 largest directories", "icon" : "SF=07.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "'${mdmVendor}' MDM Profile", "subtitle" : "The presence of the '${mdmVendor}' MDM profile helps ensure your Mac is enrolled", "icon" : "SF=08.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "'${mdmVendor}' MDM Certficate Expiration", "subtitle" : "Validate the expiration date of the '${mdmVendor}' MDM certficate", "icon" : "SF=09.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Apple Push Notification service", "subtitle" : "Validate communication between Apple, Mosyle and your Mac", "icon" : "SF=10.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Mosyle Check-In", "subtitle" : "Your Mac should check-in with the Mosyle MDM server multiple times each day", "icon" : "SF=11.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
-    {"title" : "Network Quality Test", "subtitle" : "Various networking-related tests of your Mac’s Internet connection", "icon" : "SF=12.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"}
+    {"title" : "VPN Client", "subtitle" : "Your Mac should have the proper VPN client installed and usable", "icon" : "SF=06.circle,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Last Reboot", "subtitle" : "Restart your Mac regularly — at least once a week — can help resolve many common issues", "icon" : "SF=07.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Free Disk Space", "subtitle" : "See KB0080685 Disk Usage to help identify the 50 largest directories", "icon" : "SF=08.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "'${mdmVendor}' MDM Profile", "subtitle" : "The presence of the '${mdmVendor}' MDM profile helps ensure your Mac is enrolled", "icon" : "SF=09.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "'${mdmVendor}' MDM Certficate Expiration", "subtitle" : "Validate the expiration date of the '${mdmVendor}' MDM certficate", "icon" : "SF=10.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Apple Push Notification service", "subtitle" : "Validate communication between Apple, Mosyle and your Mac", "icon" : "SF=11.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Mosyle Check-In", "subtitle" : "Your Mac should check-in with the Mosyle MDM server multiple times each day", "icon" : "SF=12.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"},
+    {"title" : "Network Quality Test", "subtitle" : "Various networking-related tests of your Mac’s Internet connection", "icon" : "SF=13.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"}
 ]
 '
 
@@ -669,6 +673,7 @@ genericMdmListitemJSON='
     {"title" : "Network Quality Test", "subtitle" : "Various networking-related tests of your Mac’s Internet connection", "icon" : "SF=08.circle.fill,'"${organizationColorScheme}"'", "status" : "pending", "statustext" : "Pending …"}
 ]
 '
+
 # Validate genericMdmListitemJSON is valid JSON
 if ! echo "$genericMdmListitemJSON" | jq . >/dev/null 2>&1; then
   echo "Error: genericMdmListitemJSON is invalid JSON"
@@ -2076,12 +2081,12 @@ function checkVPN() {
             ;;
 
         *"Idle"* )
-            dialogUpdate "listitem: index: ${1}, status: success, statustext: Idle"
+            dialogUpdate "listitem: index: ${1}, status: error, statustext: Idle"
             info "${vpnAppName} idle"
             ;;
             
         "None" )
-            dialogUpdate "listitem: index: ${1}, status: success, statustext: No VPN"
+            dialogUpdate "listitem: index: ${1}, status: error, statustext: No VPN"
             info "No VPN"
             ;;
 
@@ -2350,6 +2355,7 @@ dialogUpdate "list: show"
 if [[ "${operationMode}" == "production" ]]; then
 
     # Production Mode
+
     case ${mdmVendor} in
 
         "Jamf Pro" )
@@ -2358,20 +2364,21 @@ if [[ "${operationMode}" == "production" ]]; then
             checkSIP "2"
             checkFirewall "3"
             checkFileVault "4"
-            checkUptime "5"
-            checkFreeDiskSpace "6"
-            checkMdmProfile "7"
-            checkMdmCertificateExpiration "8"
-            checkAPNs "9"
-            checkJamfProCheckIn "10"
-            checkJamfProInventory "11"
-            checkInternal "12" "/Applications/1Password.app" "/Applications/1Password.app" "1Password"
-            checkExternalJamfPro "13" "symvBeyondTrustPMfM" "/Applications/PrivilegeManagement.app"
-            checkExternalJamfPro "14" "symvCiscoUmbrella" "/Applications/Cisco/Cisco Secure Client.app"
-            checkExternalJamfPro "15" "symvCrowdStrikeFalcon" "/Applications/Falcon.app"
-            checkExternalJamfPro "16" "symvGlobalProtect" "/Applications/GlobalProtect.app"
-            checkNetworkQuality "17"
-            updateComputerInventory "18"
+            checkVPN "5"
+            checkUptime "6"
+            checkFreeDiskSpace "7"
+            checkMdmProfile "8"
+            checkMdmCertificateExpiration "9"
+            checkAPNs "10"
+            checkJamfProCheckIn "11"
+            checkJamfProInventory "12"
+            checkInternal "13" "/Applications/1Password.app" "/Applications/1Password.app" "1Password"
+            checkExternalJamfPro "14" "symvBeyondTrustPMfM" "/Applications/PrivilegeManagement.app"
+            checkExternalJamfPro "15" "symvCiscoUmbrella" "/Applications/Cisco/Cisco Secure Client.app"
+            checkExternalJamfPro "16" "symvCrowdStrikeFalcon" "/Applications/Falcon.app"
+            checkExternalJamfPro "17" "symvGlobalProtect" "/Applications/GlobalProtect.app"
+            checkNetworkQuality "18"
+            updateComputerInventory "19"
             ;;
 
         "Microsoft Intune" )
@@ -2380,13 +2387,14 @@ if [[ "${operationMode}" == "production" ]]; then
             checkSIP "2"
             checkFirewall "3"
             checkFileVault "4"
-            checkUptime "5"
-            checkFreeDiskSpace "6"
-            checkMdmProfile "7"
-            checkMdmCertificateExpiration "8"
-            checkAPNs "9"
-            checkInternal "10" "/Applications/Company Portal.app" "/Applications/Company Portal.app" "Company Portal"
-            checkNetworkQuality "11"
+            checkVPN "5"
+            checkUptime "6"
+            checkFreeDiskSpace "7"
+            checkMdmProfile "8"
+            checkMdmCertificateExpiration "9"
+            checkAPNs "10"
+            checkInternal "11" "/Applications/Company Portal.app" "/Applications/Company Portal.app" "Company Portal"
+            checkNetworkQuality "12"
             ;;
 
         "Mosyle" )
@@ -2395,13 +2403,14 @@ if [[ "${operationMode}" == "production" ]]; then
             checkSIP "2"
             checkFirewall "3"
             checkFileVault "4"
-            checkUptime "5"
-            checkFreeDiskSpace "6"
-            checkMdmProfile "7"
-            checkMdmCertificateExpiration "8"
-            checkAPNs "9"
-            checkMosyleCheckIn "10"
-            checkNetworkQuality "11"
+            checkVPN "5"
+            checkUptime "6"
+            checkFreeDiskSpace "7"
+            checkMdmProfile "8"
+            checkMdmCertificateExpiration "9"
+            checkAPNs "10"
+            checkMosyleCheckIn "11"
+            checkNetworkQuality "12"
             ;;
 
         * )
